@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width,initial-scale=1" name="viewport" />
+    <title>ログイン - ワークアウトアプリ</title>
+    <style>
+      :root {
+        --bg: #0b1020;
+        --card: #111931cc;
+        --text: #eaf1ff;
+        --muted: #b6c2e1;
+        --accent: #6ee7ff;
+        --ok: #6ee7a0;
+        --warn: #ffd166;
+        --danger: #ff6b6b;
+        --ring: #2b3657;
+        --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+        --radius: 18px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+          "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic UI", "Meiryo",
+          sans-serif;
+        color: var(--text);
+        background: radial-gradient(
+            1200px 600px at 10% -10%,
+            #132042 0%,
+            transparent 60%
+          ),
+          radial-gradient(900px 500px at 110% 20%, #1f2e56 0%, transparent 60%),
+          linear-gradient(160deg, #0a0f1c 0%, #0e1426 100%);
+        background-attachment: fixed;
+      }
+
+      .container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        padding: 20px;
+      }
+
+      .login-card {
+        background: linear-gradient(180deg, #121a31, #0e162b);
+        backdrop-filter: blur(6px);
+        border: 1px solid #243055;
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        padding: 40px;
+        width: 100%;
+        max-width: 400px;
+      }
+
+      .logo {
+        text-align: center;
+        margin-bottom: 30px;
+      }
+
+      .logo h1 {
+        font-size: 28px;
+        font-weight: 800;
+        margin: 0 0 8px;
+        color: var(--accent);
+      }
+
+      .logo p {
+        color: var(--muted);
+        margin: 0;
+        font-size: 14px;
+      }
+
+      .form-group {
+        margin-bottom: 20px;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: var(--text);
+      }
+
+      input[type="text"],
+      input[type="password"] {
+        width: 100%;
+        padding: 12px 16px;
+        background: #1a2344;
+        border: 1px solid #26325a;
+        border-radius: 8px;
+        color: var(--text);
+        font-size: 16px;
+        transition: border-color 0.2s;
+      }
+
+      input[type="text"]:focus,
+      input[type="password"]:focus {
+        outline: none;
+        border-color: var(--accent);
+      }
+
+      .btn {
+        width: 100%;
+        padding: 12px;
+        background: linear-gradient(135deg, var(--accent), #4dd4f0);
+        border: none;
+        border-radius: 8px;
+        color: var(--bg);
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
+      }
+
+      .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(110, 231, 255, 0.3);
+      }
+
+      .btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      .error {
+        background: rgba(255, 107, 107, 0.1);
+        border: 1px solid var(--danger);
+        color: var(--danger);
+        padding: 12px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        font-size: 14px;
+      }
+
+      .toggle-form {
+        text-align: center;
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid #26325a;
+      }
+
+      .toggle-form a {
+        color: var(--accent);
+        text-decoration: none;
+        cursor: pointer;
+      }
+
+      .toggle-form a:hover {
+        text-decoration: underline;
+      }
+
+      .hidden {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="login-card">
+        <div class="logo">
+          <h1>🏋️‍♂️ ワークアウト</h1>
+          <p>トレーニング記録ポータル</p>
+        </div>
+
+        <div id="error-message" class="error hidden"></div>
+
+        <!-- ログインフォーム -->
+        <form id="login-form">
+          <div class="form-group">
+            <label for="login-username">ユーザーID</label>
+            <input type="text" id="login-username" name="username" required />
+          </div>
+          <div class="form-group">
+            <label for="login-password">パスワード</label>
+            <input
+              type="password"
+              id="login-password"
+              name="password"
+              required
+            />
+          </div>
+          <button type="submit" class="btn" id="login-btn">ログイン</button>
+        </form>
+
+        <!-- 新規登録フォーム -->
+        <form id="register-form" class="hidden">
+          <div class="form-group">
+            <label for="register-username">ユーザーID</label>
+            <input
+              type="text"
+              id="register-username"
+              name="username"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="register-password">パスワード</label>
+            <input
+              type="password"
+              id="register-password"
+              name="password"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="register-password-confirm">パスワード確認</label>
+            <input
+              type="password"
+              id="register-password-confirm"
+              name="passwordConfirm"
+              required
+            />
+          </div>
+          <button type="submit" class="btn" id="register-btn">新規登録</button>
+        </form>
+
+        <div class="toggle-form">
+          <a id="toggle-to-register">新規アカウント作成</a>
+          <a id="toggle-to-login" class="hidden">ログインに戻る</a>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // フォーム切り替え
+      const loginForm = document.getElementById("login-form");
+      const registerForm = document.getElementById("register-form");
+      const toggleToRegister = document.getElementById("toggle-to-register");
+      const toggleToLogin = document.getElementById("toggle-to-login");
+      const errorMessage = document.getElementById("error-message");
+
+      toggleToRegister.addEventListener("click", () => {
+        loginForm.classList.add("hidden");
+        registerForm.classList.remove("hidden");
+        toggleToRegister.classList.add("hidden");
+        toggleToLogin.classList.remove("hidden");
+        clearError();
+      });
+
+      toggleToLogin.addEventListener("click", () => {
+        registerForm.classList.add("hidden");
+        loginForm.classList.remove("hidden");
+        toggleToLogin.classList.add("hidden");
+        toggleToRegister.classList.remove("hidden");
+        clearError();
+      });
+
+      function showError(message) {
+        errorMessage.textContent = message;
+        errorMessage.classList.remove("hidden");
+      }
+
+      function clearError() {
+        errorMessage.classList.add("hidden");
+      }
+
+      // ログイン処理
+      loginForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        clearError();
+
+        const username = document.getElementById("login-username").value;
+        const password = document.getElementById("login-password").value;
+        const loginBtn = document.getElementById("login-btn");
+
+        if (!username || !password) {
+          showError("ユーザーIDとパスワードを入力してください");
+          return;
+        }
+
+        loginBtn.disabled = true;
+        loginBtn.textContent = "ログイン中...";
+
+        try {
+          const response = await fetch("/api/login", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ username, password }),
+          });
+
+          if (response.ok) {
+            // ログイン成功 - メインページにリダイレクト
+            window.location.href = "/";
+          } else {
+            const error = await response.json();
+            showError(error.error || "ログインに失敗しました");
+          }
+        } catch (error) {
+          showError("ネットワークエラーが発生しました");
+        } finally {
+          loginBtn.disabled = false;
+          loginBtn.textContent = "ログイン";
+        }
+      });
+
+      // 新規登録処理
+      registerForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        clearError();
+
+        const username = document.getElementById("register-username").value;
+        const password = document.getElementById("register-password").value;
+        const passwordConfirm = document.getElementById(
+          "register-password-confirm"
+        ).value;
+        const registerBtn = document.getElementById("register-btn");
+
+        if (!username || !password || !passwordConfirm) {
+          showError("全ての項目を入力してください");
+          return;
+        }
+
+        if (password !== passwordConfirm) {
+          showError("パスワードが一致しません");
+          return;
+        }
+
+        if (password.length < 4) {
+          showError("パスワードは4文字以上で入力してください");
+          return;
+        }
+
+        registerBtn.disabled = true;
+        registerBtn.textContent = "登録中...";
+
+        try {
+          const response = await fetch("/api/register", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ username, password }),
+          });
+
+          if (response.ok) {
+            // 登録成功 - メインページにリダイレクト
+            window.location.href = "/";
+          } else {
+            const error = await response.json();
+            showError(error.error || "登録に失敗しました");
+          }
+        } catch (error) {
+          showError("ネットワークエラーが発生しました");
+        } finally {
+          registerBtn.disabled = false;
+          registerBtn.textContent = "新規登録";
+        }
+      });
+
+      // ページ読み込み時にログイン状態をチェック
+      window.addEventListener("load", async () => {
+        try {
+          const response = await fetch("/api/me");
+          const data = await response.json();
+          if (data.user) {
+            // 既にログイン済み - メインページにリダイレクト
+            window.location.href = "/";
+          }
+        } catch (error) {
+          // ログインしていない、または確認できない場合はログイン画面を表示
+        }
+      });
+    </script>
+  </body>
+</html>
