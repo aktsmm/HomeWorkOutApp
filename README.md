@@ -57,6 +57,37 @@ Node.js（JavaScript）で作られており、データベースには SQLite �
   - ローカル SQLite（db.sqlite）に保存。バックアップ/持ち運びが容易
   - ユーザーごとにデータを分離（users / logs テーブル）
 
+## 🚀 クイックスタート
+
+すぐに試したい方向けの最短手順です：
+
+```powershell
+# 1. リポジトリをクローン
+git clone https://github.com/aktsmm/HomeWorkOutApp.git
+cd HomeWorkOutApp
+
+# 2. 依存関係をインストール
+npm install
+
+# 3. 設定ファイルをコピー
+Copy-Item .env.example .env
+
+# 4. アプリを起動
+npm run dev
+
+# 5. ブラウザでアクセス
+# http://localhost:3000
+```
+
+初回ログイン情報（デモ用）：
+
+- **ユーザー名**: `admin`
+- **パスワード**: `password`
+
+> ⚠️ 本番環境では必ず `.env` ファイルでパスワードを変更してください。
+
+---
+
 ## 🚀 はじめ方（初心者向け）
 
 重要: Windows での動作安定のため、Node.js は LTS（推奨: 20.x）をご利用ください。Node 22 だと better-sqlite3 のプリビルドが無く、Visual Studio Build Tools を使ったネイティブビルドが必要になり失敗するパターンもあり。（ただし成功するパターンもあり・・詳細不明)
@@ -135,8 +166,10 @@ Copy-Item .env.example .env
 
 #### 初期ユーザー（デフォルトアカウント）
 
-- 初回起動時、指定ユーザーが存在しない場合は自動作成されます。
-- 既定値（デモ用）
+> 🔐 **セキュリティ重要**: 本番環境や共有環境では必ず初期パスワードを変更してください
+
+- 初回起動時、指定ユーザーが存在しない場合は自動作成されます
+- **既定値（デモ用のみ）**:
 
   ```properties
   ADMIN_USER=admin
@@ -144,10 +177,10 @@ Copy-Item .env.example .env
   SESSION_SECRET=dev_secret
   ```
 
-- 本番/共有環境では、必ず .env で上書きしてください。
+- **推奨設定例**:
 
   ```properties
-  # 例: 強いパスワードとランダムなセッションキーに変更
+  # 強力なパスワードとランダムなセッションキーに変更
   ADMIN_USER=your_name
   ADMIN_PASS=use-a-strong-password-here
   SESSION_SECRET=change-this-to-a-long-random-string
@@ -278,22 +311,22 @@ HomeWorkOutApp/
 
 ## ✅ 動作確認環境
 
-- 最終確認日: 2025-08-12
-- OS: Windows 11 24H2（Build 26100）
-- Shell: PowerShell 7.5.2
-- Node.js: 20.x LTS（nvm-windows で切替）
-- npm: 10.x
-- 主要ライブラリ（抜粋）:
+- **最終確認日**: 2024 年 12 月
+- **OS**: Windows 11 24H2（Build 26100）
+- **Shell**: PowerShell 7.x
+- **Node.js**: 20.x LTS（nvm-windows で切替）
+- **npm**: 10.x
+- **主要ライブラリ**:
   - express 4.19.x
   - express-session 1.17.x
   - better-sqlite3 9.4.x
-  - sqlite3 5.1.x
   - bcrypt 5.1.x
-- ブラウザ: Microsoft Edge / Google Chrome（最新版）
+- **対応ブラウザ**: Microsoft Edge / Google Chrome（最新版）
 
-### 備考
+### 重要な注意事項
 
-- Node 22.x では better-sqlite3 のプリビルドが提供されないケースがあり、Visual Studio Build Tools と Windows SDK が必要になる場合があります。簡単に動かすには Node 20 LTS を推奨します。
+- **Node.js 22.x**では better-sqlite3 のプリビルドが提供されないケースがあり、Visual Studio Build Tools と Windows SDK が必要になる場合があります
+- **推奨**: 安定動作のため Node.js 20 LTS の使用を強く推奨します
 
 ## 📄 ライセンス
 

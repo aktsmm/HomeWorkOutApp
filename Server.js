@@ -18,8 +18,8 @@ const SESSION_SECRET = process.env.SESSION_SECRET || "dev_secret_bootcamp_2024";
 const HOST = process.env.HOST; // オプショナル
 
 // デフォルトユーザー設定
-const ADMIN_USER = process.env.ADMIN_USER || "yamapan";
-const ADMIN_PASS = process.env.ADMIN_PASS || "yamapan2";
+const ADMIN_USER = process.env.ADMIN_USER || "admin";
+const ADMIN_PASS = process.env.ADMIN_PASS || "pasword";
 
 // === データベース設定 ===
 const dbPath = path.join(__dirname, "db.sqlite");
@@ -80,8 +80,14 @@ await createInitialUser();
 
 // === ユーティリティ関数 ===
 function saveDailyLog(username, action, details = {}) {
-  const dateKey = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+  // アクションごとにdateKeyをユニーク化
+  let dateKey;
   const dateIso = new Date().toISOString();
+  if (action === "workout") {
+    dateKey = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+  } else {
+    dateKey = `${new Date().toISOString().slice(0, 10)}-${action}`;
+  }
   const payload = JSON.stringify({
     dateKey,
     date: dateIso,
@@ -161,7 +167,8 @@ app.use((req, res, next) => {
 app.post("/api/register", async (req, res) => {
   try {
     const { username, password } = req.body || {};
-    const uname = typeof username === "string" ? username.trim() : "";
+    const uname =
+      typeof username === "string" ? username.trim().toLowerCase() : "";
 
     // バリデーション
     if (!uname || !password) {
@@ -221,7 +228,8 @@ app.post("/api/register", async (req, res) => {
 app.post("/api/login", async (req, res) => {
   try {
     const { username, password } = req.body || {};
-    const uname = typeof username === "string" ? username.trim() : "";
+    const uname =
+      typeof username === "string" ? username.trim().toLowerCase() : "";
 
     if (!uname || !password) {
       return res.status(400).json({
@@ -290,7 +298,7 @@ app.get("/api/me", (req, res) => {
 // ログエントリの保存・更新
 app.post("/api/logs/upsert", requireAuth, (req, res) => {
   try {
-    const username = req.session.user.name;
+    const username = req.session.user.name.trim().toLowerCase();
     const entry = req.body || {};
 
     if (!entry.dateKey) {
@@ -302,8 +310,12 @@ app.post("/api/logs/upsert", requireAuth, (req, res) => {
       entry.progress = 0;
     }
 
+    // 運動記録としてaction: 'workout'を必ず付与
+    entry.action = "workout";
+
     const payload = JSON.stringify(entry);
     const dateIso = entry.date || new Date().toISOString();
+    console.log(`[DEBUG] 保存 username: ${username}, payload: ${payload}`);
 
     // updated_atカラムの存在を確認
     const tableInfo = db.prepare("PRAGMA table_info(logs)").all();
@@ -345,7 +357,7 @@ app.post("/api/logs/upsert", requireAuth, (req, res) => {
 // ログ一覧取得（新しい順）
 app.get("/api/logs", requireAuth, (req, res) => {
   try {
-    const username = req.session.user.name;
+    const username = req.session.user.name.trim().toLowerCase();
     const rows = db
       .prepare(
         `
@@ -355,6 +367,7 @@ app.get("/api/logs", requireAuth, (req, res) => {
     `
       )
       .all(username);
+    console.log(`[DEBUG] 取得 username: ${username}, 件数: ${rows.length}`);
 
     // progress値が必ず含まれるように補完
     const logs = rows.map((row) => {
@@ -375,7 +388,7 @@ app.get("/api/logs", requireAuth, (req, res) => {
 // 特定日のログ取得
 app.get("/api/logs/:dateKey", requireAuth, (req, res) => {
   try {
-    const username = req.session.user.name;
+    const username = req.session.user.name.trim().toLowerCase();
     const row = db
       .prepare(
         `
@@ -406,7 +419,7 @@ app.get("/api/logs/:dateKey", requireAuth, (req, res) => {
 // 特定日のログ削除
 app.delete("/api/logs/:dateKey", requireAuth, (req, res) => {
   try {
-    const username = req.session.user.name;
+    const username = req.session.user.name.trim().toLowerCase();
     const result = db
       .prepare(
         `
@@ -431,7 +444,7 @@ app.delete("/api/logs/:dateKey", requireAuth, (req, res) => {
 // CSVエクスポート
 app.get("/api/logs/export", requireAuth, (req, res) => {
   try {
-    const username = req.session.user.name;
+    const username = req.session.user.name.trim().toLowerCase();
     const rows = db
       .prepare(
         `

@@ -1,11 +1,9 @@
 <!DOCTYPE html>
-
 <html lang="ja">
   <head>
     <meta charset="utf-8" />
     <meta content="width=device-width,initial-scale=1" name="viewport" />
-    <title>ブートキャンプ・スターター</title>
-    <meta content="light dark" name="color-scheme" />
+    <title>ログイン - ワークアウトアプリ</title>
     <style>
       :root {
         --bg: #0b1020;
@@ -20,11 +18,14 @@
         --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
         --radius: 18px;
       }
+
+      * {
+        box-sizing: border-box;
+      }
+
       html,
       body {
         height: 100%;
-      }
-      body {
         margin: 0;
         font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
           "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic UI", "Meiryo",
@@ -39,1676 +40,338 @@
           linear-gradient(160deg, #0a0f1c 0%, #0e1426 100%);
         background-attachment: fixed;
       }
-      .wrap {
-        max-width: 1100px;
-        margin: 0 auto;
-        padding: 24px 16px 80px;
-      }
-      header {
-        display: grid;
-        gap: 14px;
-        align-items: center;
-        grid-template-columns: 1fr auto;
-        margin-bottom: 18px;
-      }
-      .title {
-        font-size: clamp(22px, 3vw, 32px);
-        font-weight: 800;
-        letter-spacing: 0.3px;
+
+      .container {
         display: flex;
         align-items: center;
-        gap: 12px;
+        justify-content: center;
+        min-height: 100vh;
+        padding: 20px;
       }
-      .chipbar {
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-      }
-      .chip {
-        background: linear-gradient(180deg, #1a2344, #131b34);
-        border: 1px solid #26325a;
-        color: #cfe3ff;
-        padding: 8px 12px;
-        border-radius: 999px;
-        font-size: 13px;
-      }
-      .grid {
-        display: grid;
-        gap: 16px;
-        grid-template-columns: repeat(12, 1fr);
-      }
-      .card {
-        grid-column: span 12;
+
+      .login-card {
         background: linear-gradient(180deg, #121a31, #0e162b);
         -webkit-backdrop-filter: blur(6px);
         backdrop-filter: blur(6px);
         border: 1px solid #243055;
         border-radius: var(--radius);
         box-shadow: var(--shadow);
-        padding: 18px;
-      }
-      @media (min-width: 900px) {
-        .span-7 {
-          grid-column: span 7;
-        }
-        .span-5 {
-          grid-column: span 5;
-        }
-      }
-      h2 {
-        margin: 0 0 8px;
-        font-size: 18px;
-      }
-      .muted {
-        color: var(--muted);
-        font-size: 13px;
-      }
-      .row {
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-        align-items: center;
-      }
-      .kpi {
-        display: flex;
-        gap: 14px;
-        flex-wrap: wrap;
-        margin: 6px 0 12px;
-      }
-      .pill {
-        background: #0b1226;
-        border: 1px solid #243055;
-        border-radius: 12px;
-        padding: 8px 10px;
-        font-size: 13px;
-        color: #dbe6ff;
-      }
-      .progress {
+        padding: 40px;
         width: 100%;
-        height: 12px;
-        border-radius: 999px;
-        background: #0b1328;
-        border: 1px solid #233055;
-        overflow: hidden;
+        max-width: 400px;
       }
-      .progress > span {
-        display: block;
-        height: 100%;
-        background: linear-gradient(90deg, #33d1ff, #7af0ff);
-        width: 0%;
+
+      .logo {
+        text-align: center;
+        margin-bottom: 30px;
       }
-      .btn {
-        border: none;
-        border-radius: 12px;
-        padding: 10px 14px;
-        font-weight: 700;
-        cursor: pointer;
-        background: linear-gradient(180deg, #27b8ff, #1aa3e6);
-        color: #042032;
-        box-shadow: 0 6px 18px rgba(39, 184, 255, 0.35);
-      }
-      .btn.secondary {
-        background: linear-gradient(180deg, #2a3357, #1a2242);
-        color: #d7e6ff;
-        border: 1px solid #2e3a66;
-        box-shadow: none;
-      }
-      .btn.ghost {
-        background: transparent;
-        border: 1px dashed #2a3968;
-        color: #bcd5ff;
-      }
-      .tag {
-        font-size: 12px;
-        background: #112044;
-        border: 1px solid #26325a;
-        padding: 4px 8px;
-        border-radius: 999px;
-        color: #bfe8ff;
-      }
-      .list {
-        display: grid;
-        gap: 10px;
-        margin-top: 10px;
-      }
-      .ex {
-        display: grid;
-        gap: 10px;
-        grid-template-columns: 1fr auto;
-        align-items: center;
-        padding: 12px;
-        border-radius: 14px;
-        border: 1px solid #223259;
-        background: linear-gradient(180deg, #0f1831, #0c1429);
-      }
-      .ex .meta {
-        font-size: 14px;
-      }
-      .ex .meta b {
-        font-size: 15px;
-      }
-      .ex .steps {
-        font-size: 12px;
-        color: #c6d6ff;
-      }
-      .checkset {
-        display: flex;
-        gap: 8px;
-        align-items: center;
-        flex-wrap: wrap;
-      }
-      .checkset input {
-        accent-color: #33d1ff;
-        width: 18px;
-        height: 18px;
-      }
-      .timer {
-        display: grid;
-        gap: 10px;
-        grid-template-columns: 1fr auto;
-        align-items: center;
-        margin: 12px 0 4px;
-      }
-      .clock {
-        font-variant-numeric: tabular-nums;
+
+      .logo h1 {
         font-size: 28px;
         font-weight: 800;
-        letter-spacing: 0.5px;
+        margin: 0 0 8px;
+        color: var(--accent);
       }
-      .seglist {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
+
+      .logo p {
+        color: var(--muted);
+        margin: 0;
+        font-size: 14px;
       }
-      .seg {
-        padding: 8px 10px;
-        border-radius: 10px;
-        border: 1px solid #2a3968;
-        background: #0f1937;
-        font-size: 12px;
-        color: #bfe8ff;
+
+      .form-group {
+        margin-bottom: 20px;
       }
-      .note {
-        font-size: 12px;
-        color: #bcd2ff;
-        margin-top: 8px;
+
+      label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: var(--text);
       }
-      footer {
-        position: fixed;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        display: flex;
-        gap: 10px;
-        justify-content: center;
-        align-items: center;
-        padding: 10px;
-        background: linear-gradient(
-          180deg,
-          transparent,
-          rgba(10, 15, 28, 0.85)
-        );
-        -webkit-backdrop-filter: blur(6px);
-        backdrop-filter: blur(6px);
-      }
-      .quote {
-        font-style: italic;
-        color: #cfe3ff;
-      }
-      .switch {
-        display: flex;
-        gap: 10px;
-        align-items: center;
-      }
-      .switch input {
-        width: 42px;
-        height: 22px;
-      }
-      .small {
-        font-size: 12px;
-      }
-      .log-table-wrap {
-        overflow-x: auto;
+
+      input[type="text"],
+      input[type="password"] {
         width: 100%;
-        border-radius: 12px;
-        border: 1px solid #223259;
-        background: #0f1831;
+        padding: 12px 16px;
+        background: #1a2344;
+        border: 1px solid #26325a;
+        border-radius: 8px;
+        color: var(--text);
+        font-size: 16px;
+        transition: border-color 0.2s;
       }
-      #logTable {
+
+      input[type="text"]:focus,
+      input[type="password"]:focus {
+        outline: none;
+        border-color: var(--accent);
+      }
+
+      .btn {
         width: 100%;
-        border-collapse: collapse;
-        font-size: 13px;
-        min-width: 700px;
+        padding: 12px;
+        background: linear-gradient(135deg, var(--accent), #4dd4f0);
+        border: none;
+        border-radius: 8px;
+        color: var(--bg);
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
       }
-      #logTable th,
-      #logTable td {
-        min-width: 70px;
-        padding: 6px 4px;
-        word-break: break-word;
-        text-align: left;
+
+      .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(110, 231, 255, 0.3);
       }
-      @media (max-width: 600px) {
-        #logTable {
-          font-size: 11px;
-          min-width: 480px;
-        }
-        #logTable th,
-        #logTable td {
-          min-width: 48px;
-          padding: 4px 2px;
-        }
-        .log-table-wrap {
-          border-radius: 8px;
-        }
+
+      .btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      .error {
+        background: rgba(255, 107, 107, 0.1);
+        border: 1px solid var(--danger);
+        color: var(--danger);
+        padding: 12px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        font-size: 14px;
+      }
+
+      .toggle-form {
+        text-align: center;
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid #26325a;
+      }
+
+      .toggle-form a {
+        color: var(--accent);
+        text-decoration: none;
+        cursor: pointer;
+      }
+
+      .toggle-form a:hover {
+        text-decoration: underline;
+      }
+
+      .hidden {
+        display: none;
       }
     </style>
-    <script>
-      // === Utilities ===
-      const $ = (s) => document.querySelector(s);
-      const $$ = (s) => Array.from(document.querySelectorAll(s));
-      const todayStr = new Date().toLocaleDateString("ja-JP", {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-      });
-      const keyBase = () => new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-      const LSKEY = (suffix) => `bootcamp.${suffix}`;
-
-      // グローバル変数
-      let autoSaveTimer = null;
-
-      // === グローバル関数定義 ===
-      // これらの関数をグローバルスコープで定義してIIFE内の重複定義を回避
-
-      function collectSets() {
-        const sets = {};
-        $$(".set").forEach((ch) => {
-          const key = ch.dataset.key;
-          sets[key] = parseInt($("#" + key + "Count")?.value || "0", 10);
-        });
-        return sets;
-      }
-
-      function collectStretch() {
-        const parts = {};
-        $$(".str").forEach((ch) => {
-          const key = ch.dataset.key;
-          parts[key] = ch.checked;
-        });
-        return parts;
-      }
-
-      function updateProgress() {
-        const progressBar = $(".progress > span");
-        if (!progressBar) return;
-
-        const s = getState();
-        const sets = collectSets();
-        const stretchParts = collectStretch();
-
-        // 基本的な完了状況（70%の重み）
-        const basicProgress = ((s.bikeDone ? 1 : 0) +
-                              (s.strengthDone ? 1 : 0) +
-                              (s.stretchDone ? 1 : 0)) / 3;
-
-        // 詳細な実行状況（30%の重み）
-        const detailProgress = (Object.values(sets).filter(v => v > 0).length +
-                               Object.values(stretchParts).filter(v => v === true).length) / 13;
-
-        const totalProgress = Math.round(100 * (0.7 * basicProgress + 0.3 * detailProgress));
-        progressBar.style.width = totalProgress + "%";
-
-        // 進捗表示の更新
-        const progressText = $(".kpi .pill");
-        if (progressText) {
-          progressText.textContent = `進捗: ${totalProgress}%`;
-        }
-      }
-
-      function initializeToday() {
-        // 日付を表示
-        const todayEl = document.querySelector("#today");
-        if (todayEl) {
-          todayEl.textContent = todayStr;
-        }
-
-        // 挨拶を設定
-        const hour = new Date().getHours();
-        const greetEl = $("#greet");
-        if (greetEl) {
-          greetEl.textContent =
-            hour < 5
-              ? "早朝セッション"
-              : hour < 12
-              ? "おはようございます"
-              : hour < 18
-              ? "こんにちは"
-              : "こんばんは";
-        }
-
-        // 進捗バーやチェックボックスなどを初期状態に戻す
-        collectSets();
-        collectStretch();
-        updateProgress();
-        // メモ欄も空に
-        const noteEl = document.querySelector("#note");
-        if (noteEl) noteEl.value = "";
-      }
-
-      function testProgressBar() {
-        updateProgress();
-      }
-      // === データベース中心のデータ管理 ===
-      // ローカルストレージの代わりにサーバーAPIを使用
-
-      // 現在の状態を取得（サーバーから）
-      async function getState() {
-        try {
-          const ok = await ensureLogin();
-          if (!ok) return {};
-
-          const dateKey = keyBase();
-          const res = await fetch(`/api/logs/${dateKey}`);
-          if (!res.ok) {
-            if (res.status === 404) {
-              return {}; // 今日のデータがまだない場合
-            }
-            throw new Error(`Server error: ${res.status}`);
-          }
-
-          const data = await res.json();
-          return data || {};
-        } catch (e) {
-          console.warn("Failed to get state from server:", e);
-          return {};
-        }
-      }
-
-      // 状態を保存（サーバーに）
-      async function setState(state) {
-        try {
-          const ok = await ensureLogin();
-          if (!ok) return;
-
-          const entry = {
-            ...state,
-            date: new Date().toISOString(),
-            dateKey: keyBase(),
-          };
-
-          await pushTodayToServer(entry);
-        } catch (e) {
-          console.warn("Failed to set state to server:", e);
-        }
-      }
-
-      // セット数の取得
-      async function getSets() {
-        const state = await getState();
-        return state.sets || {};
-      }
-
-      // ストレッチ部位の取得
-      async function getStretchParts() {
-        const state = await getState();
-        return state.stretchParts || {};
-      }
-
-      // ログ一覧の取得（完全にサーバーから）
-      async function getJournal() {
-        try {
-          const ok = await ensureLogin();
-          if (!ok) return [];
-
-          const res = await fetch("/api/logs");
-          if (!res.ok) throw new Error(`Server error: ${res.status}`);
-          const logs = await res.json();
-          return Array.isArray(logs) ? logs : [];
-        } catch (e) {
-          console.warn("Failed to get journal from server:", e);
-          return [];
-        }
-      }
-
-      // ログ一覧の設定（不要になったが互換性のため残す）
-      function setJournal(logs) {
-        // この関数は互換性のためのダミー
-        console.log("setJournal called (deprecated, using server directly)");
-      }
-
-      // チェック状態の更新
-      async function mark(key, checked) {
-        const state = await getState();
-        state[key] = checked;
-        await setState(state);
-        updateProgress();
-        scheduleAutoSave();
-      }
-
-      // セットアップイベントリスナー
-      function setupEventListeners() {
-        // 保存ボタン
-        const saveBtn = document.getElementById("saveLog");
-        if (saveBtn)
-          saveBtn.addEventListener("click", () => {
-            saveTodaySnapshot(false);
-          });
-
-        // CSVエクスポートボタン
-        const exportCsvBtn = document.getElementById("exportCsv");
-        if (exportCsvBtn) {
-          exportCsvBtn.addEventListener("click", async () => {
-            try {
-              const ok = await ensureLogin();
-              if (ok) {
-                window.open("/api/logs/export", "_blank");
-              }
-            } catch (e) {
-              console.warn("CSV export failed:", e);
-            }
-          });
-        }
-
-        // すべての記録を削除ボタン
-        const clearAllBtn = document.getElementById("clearAllLogs");
-        if (clearAllBtn) {
-          clearAllBtn.addEventListener("click", async () => {
-            if (
-              confirm("すべての記録を削除しますか？この操作は取り消せません。")
-            ) {
-              try {
-                // サーバーから全ログを取得して削除
-                const logs = await getJournal();
-                for (const log of logs) {
-                  if (log.dateKey) {
-                    await fetch(`/api/logs/${log.dateKey}`, { method: "DELETE" });
-                  }
-                }
-                await renderLogTable();
-                alert("すべての記録を削除しました。");
-              } catch (e) {
-                console.warn("Clear all logs failed:", e);
-              }
-            }
-          });
-        }
-
-        // JSONバックアップボタン
-        const exportJsonBtn = document.getElementById("exportJson");
-        if (exportJsonBtn) {
-          exportJsonBtn.addEventListener("click", async () => {
-            const logs = await getJournal();
-            const blob = new Blob([JSON.stringify(logs, null, 2)], {
-              type: "application/json",
-            });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = `workout-logs-${new Date().toISOString().slice(0, 10)}.json`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-          });
-        }
-      }
-
-      // 状態復元
-      async function restoreState() {
-        const state = await getState();
-
-        // チェックボックスの状態を復元
-        $$(".set").forEach(async (ch) => {
-          const key = `set.${ch.dataset.key}`;
-          ch.checked = !!state[key];
-        });
-
-        $$(".str").forEach(async (ch) => {
-          const key = `str.${ch.dataset.key}`;
-          ch.checked = !!state[key];
-        });
-
-        // メイン完了チェックボックスの状態を復元
-        const strengthDoneEl = $("#strengthDone");
-        const stretchDoneEl = $("#stretchDone");
-        const bikeDoneEl = $("#bikeDone");
-
-        if (strengthDoneEl) strengthDoneEl.checked = !!state.strengthDone;
-        if (stretchDoneEl) stretchDoneEl.checked = !!state.stretchDone;
-        if (bikeDoneEl) bikeDoneEl.checked = !!state.bikeDone;
-
-        // セット数の復元
-        if (state.sets) {
-          Object.entries(state.sets).forEach(([key, value]) => {
-            const input = $(`#${key}Count`);
-            if (input) input.value = value || 0;
-          });
-        }
-
-        // メモの復元
-        const noteEl = $("#note");
-        if (noteEl && state.note) {
-          noteEl.value = state.note;
-        }
-
-        updateProgress();
-      }
-        // 保存ボタン
-        const saveBtn = document.getElementById("saveLog");
-        if (saveBtn)
-          saveBtn.addEventListener("click", () => {
-            saveTodaySnapshot(false);
-          });
-
-        // CSVエクスポートボタン
-        const exportCsvBtn = document.getElementById("exportCsv");
-        if (exportCsvBtn) {
-          exportCsvBtn.addEventListener("click", async () => {
-            try {
-              const ok = await ensureLogin();
-              if (ok) {
-                window.open("/api/logs/export", "_blank");
-              }
-            } catch (e) {
-              console.warn("CSV export failed:", e);
-            }
-          });
-        }
-
-        // すべての記録を削除ボタン
-        const clearAllBtn = document.getElementById("clearAllLogs");
-        if (clearAllBtn) {
-          clearAllBtn.addEventListener("click", async () => {
-            if (
-              confirm("すべての記録を削除しますか？この操作は取り消せません。")
-            ) {
-              try {
-                setJournal([]);
-                await renderLogTable();
-                alert("すべての記録を削除しました。");
-              } catch (e) {
-                console.warn("Clear all logs failed:", e);
-              }
-            }
-          });
-        }
-
-        // JSONバックアップボタン
-        const exportJsonBtn = document.getElementById("exportJson");
-        if (exportJsonBtn) {
-          exportJsonBtn.addEventListener("click", () => {
-            const logs = getJournal();
-            const blob = new Blob([JSON.stringify(logs, null, 2)], {
-              type: "application/json",
-            });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = `bootcamp-logs-${keyBase()}.json`;
-            a.click();
-            URL.revokeObjectURL(url);
-          });
-        }
-
-        // JSON読み込みボタン
-        const importJsonBtn = document.getElementById("importJson");
-        const importJsonFile = document.getElementById("importJsonFile");
-        if (importJsonBtn && importJsonFile) {
-          importJsonBtn.addEventListener("click", () => {
-            importJsonFile.click();
-          });
-
-          importJsonFile.addEventListener("change", (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = (event) => {
-              try {
-                const logs = JSON.parse(event.target.result);
-                if (Array.isArray(logs)) {
-                  setJournal(logs);
-                  renderLogTable();
-                  alert("JSONファイルを読み込みました。");
-                } else {
-                  alert("無効なJSONファイルです。");
-                }
-              } catch (e) {
-                alert("JSONファイルの読み込みに失敗しました。");
-              }
-            };
-            reader.readAsText(file);
-          });
-        }
-      }
-      function restoreState() {
-        collectSets();
-        collectStretch();
-        updateProgress();
-      }
-      // --- ログイン状態の確認（リダイレクト対応） ---
-      async function ensureLogin() {
-        const me = await fetch("/api/me")
-          .then((r) => r.json())
-          .catch(() => ({ user: null }));
-
-        if (me.user) {
-          // ユーザー名を表示
-          updateUserDisplay(me.user);
-          return true;
-        }
-
-        // ログインしていない場合はログインページにリダイレクト
-        window.location.href = "/login";
-        return false;
-      }
-
-      // ユーザー表示の更新
-      function updateUserDisplay(username) {
-        // ヘッダーにユーザー名とログアウトボタンを表示
-        const header = document.querySelector("header");
-        if (header && !document.getElementById("user-info")) {
-          const userInfo = document.createElement("div");
-          userInfo.id = "user-info";
-          userInfo.innerHTML = `
-            <div style="display: flex; align-items: center; gap: 12px;">
-              <span style="color: var(--accent); font-weight: 600;">👤 ${username}</span>
-              <button onclick="logout()" style="
-                background: var(--danger);
-                color: white;
-                border: none;
-                padding: 6px 12px;
-                border-radius: 6px;
-                cursor: pointer;
-                font-size: 12px;
-              ">ログアウト</button>
-            </div>
-          `;
-          header.appendChild(userInfo);
-        }
-      }
-
-      // ログアウト処理
-      async function logout() {
-        try {
-          await fetch("/api/logout", { method: "POST" });
-          window.location.href = "/login";
-        } catch (error) {
-          console.error("Logout error:", error);
-          window.location.href = "/login";
-        }
-      }
-
-      // サーバーへ「今日のスナップショット」を送る
-      async function pushTodayToServer(entry) {
-        try {
-          const ok = await ensureLogin();
-          if (!ok) return;
-
-          const response = await fetch("/api/logs/upsert", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(entry),
-          });
-
-          if (!response.ok) {
-            throw new Error(`Server error: ${response.status}`);
-          }
-          // console.log('Server upsert OK');
-        } catch (e) {
-          // console.warn('Server upsert failed', e);
-        }
-      }
-
-      // サーバーの一覧を取得してローカルに反映
-      async function fetchLogsFromServer() {
-        try {
-          const ok = await ensureLogin();
-          if (!ok) return;
-          const res = await fetch("/api/logs");
-          if (!res.ok) throw new Error(`Server error: ${res.status}`);
-          const list = await res.json();
-          // サーバーが真実のソース: ローカルを置き換え
-          setJournal(Array.isArray(list) ? list : []);
-          renderLogTable();
-        } catch (e) {
-          console.warn("Failed to fetch logs from server:", e);
-        }
-      }
-
-      // サーバーから取得した最新データのみで描画
-      async function renderLogTable() {
-        const tbody = document.querySelector("#logTable tbody");
-        if (!tbody) return;
-        tbody.innerHTML = "";
-        let logs = [];
-        try {
-          const ok = await ensureLogin();
-          if (!ok) return;
-          const res = await fetch("/api/logs");
-          if (!res.ok) throw new Error(`Server error: ${res.status}`);
-          logs = await res.json();
-          setJournal(Array.isArray(logs) ? logs : []); // キャッシュ用途
-        } catch (e) {
-          // サーバー取得失敗時のみローカルキャッシュを表示
-          logs = getJournal();
-        }
-        logs = (logs || []).slice().sort((a, b) => {
-          const ak = a.dateKey || (a.date ? a.date.slice(0, 10) : "");
-          const bk = b.dateKey || (b.date ? b.date.slice(0, 10) : "");
-          if (ak === bk) return (b.date || "").localeCompare(a.date || "");
-          return bk.localeCompare(ak);
-        });
-        if (logs.length === 0) {
-          const tr = document.createElement("tr");
-          tr.innerHTML = `<td colspan="12" style="padding:10px; color:#9fb2d9;">まだ記録がありません。右の「今日の記録を保存」を押すとここに表示されます。</td>`;
-          tbody.appendChild(tr);
-          return;
-        }
-        logs.forEach((lg) => {
-          const tr = document.createElement("tr");
-          tr.style.borderBottom = "1px solid #223259";
-          const dt = new Date(lg.date || `${lg.dateKey}T00:00:00`);
-          const dtStr = isNaN(dt.getTime())
-            ? lg.dateKey || "-"
-            : dt.toLocaleString("ja-JP", {
-                year: "numeric",
-                month: "2-digit",
-                day: "2-digit",
-                hour: "2-digit",
-                minute: "2-digit",
-              });
-          tr.innerHTML = `
-            <td style="padding:8px;">${dtStr}</td>
-            <td style="padding:8px;">${lg.progress ?? "-"}</td>
-            <td style="padding:8px;">${
-              lg.bikeDone ? (lg.hiit ? "有酸素+HIIT" : "有酸素") : "-"
-            }</td>
-            <td style="padding:8px;">${lg.sets?.sq ?? 0}</td>
-            <td style="padding:8px;">${lg.sets?.pu ?? 0}</td>
-            <td style="padding:8px;">${lg.sets?.pl ?? 0}</td>
-            <td style="padding:8px;">${lg.sets?.bd ?? 0}</td>
-            <td style="padding:8px;">${lg.sets?.hl ?? 0}</td>
-            <td style="padding:8px;">${lg.sets?.mc ?? 0}</td>
-            <td style="padding:8px;">${lg.stretchDone ? "✔" : "-"}</td>
-            <td style="padding:8px; max-width:320px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${(
-              lg.note || ""
-            ).replace(/"/g, "&quot;")}">${lg.note || ""}</td>
-            <td style="padding:8px;"><button class="btn ghost small" data-datekey="${
-              lg.dateKey
-            }">削除</button></td>
-          `;
-          tr.querySelector("button").addEventListener("click", async (e) => {
-            const key = e.target.dataset.datekey;
-            if (confirm("この日の記録を削除しますか？")) {
-              try {
-                const ok = await ensureLogin();
-                if (ok) {
-                  await fetch(`/api/logs/${encodeURIComponent(key)}`, {
-                    method: "DELETE",
-                  });
-                  await renderLogTable();
-                }
-              } catch (err) {
-                console.warn("Failed to delete on server:", err);
-              }
-            }
-          });
-          tbody.appendChild(tr);
-        });
-      }
-
-      // 今日のスナップショットをサーバーに保存
-      async function saveTodaySnapshot(silent = false) {
-        try {
-          const ok = await ensureLogin();
-          if (!ok) return;
-
-          const state = await getState();
-          const sets = collectSets();
-          const stretchParts = collectStretch();
-
-          const entry = {
-            date: new Date().toISOString(),
-            dateKey: keyBase(),
-            progress: $("#note")?.value || "",
-            bikeDone: !!state.bikeDone,
-            strengthDone: !!state.strengthDone,
-            stretchDone: !!state.stretchDone,
-            hiit: !!$("#hiitToggle")?.checked,
-            sets: sets,
-            stretchParts: stretchParts,
-            note: $("#note")?.value || "",
-          };
-
-          await pushTodayToServer(entry);
-
-          if (!silent) {
-            alert("今日の記録を保存しました！");
-            await renderLogTable();
-          }
-        } catch (e) {
-          console.warn("Save snapshot failed:", e);
-          if (!silent) {
-            alert("保存に失敗しました。再試行してください。");
-          }
-        }
-      }
-
-      // 自動保存のスケジューラー
-      function scheduleAutoSave() {
-        if (autoSaveTimer) clearTimeout(autoSaveTimer);
-        autoSaveTimer = setTimeout(() => {
-          saveTodaySnapshot(true); // silent mode
-        }, 2000); // 2秒後に自動保存
-      }
-
-      // データベース連携のイベントリスナー設定
-      async function setupDatabaseEventListeners() {
-        // チェックボックスのイベントリスナーを設定
-        $$(".set").forEach((ch) => {
-          ch.addEventListener("change", async (e) => {
-            const state = await getState();
-            const key = `set.${ch.dataset.key}`;
-            state[key] = e.target.checked;
-            await setState(state);
-            updateProgress();
-            scheduleAutoSave();
-          });
-        });
-
-        $$(".str").forEach((ch) => {
-          ch.addEventListener("change", async (e) => {
-            const state = await getState();
-            const key = `str.${ch.dataset.key}`;
-            state[key] = e.target.checked;
-            await setState(state);
-            updateProgress();
-            scheduleAutoSave();
-          });
-        });
-
-        // セット数入力のイベントリスナー
-        $$("input[id$='Count']").forEach((input) => {
-          input.addEventListener("input", async (e) => {
-            const state = await getState();
-            if (!state.sets) state.sets = {};
-            const key = e.target.id.replace("Count", "");
-            state.sets[key] = parseInt(e.target.value || "0", 10);
-            await setState(state);
-            updateProgress();
-            scheduleAutoSave();
-          });
-        });
-
-        // メイン完了チェックボックス
-        const strengthDoneEl = $("#strengthDone");
-        const stretchDoneEl = $("#stretchDone");
-        const bikeDoneEl = $("#bikeDone");
-
-        if (strengthDoneEl) {
-          strengthDoneEl.addEventListener("change", async (e) => {
-            await mark("strengthDone", e.target.checked);
-          });
-        }
-
-        if (stretchDoneEl) {
-          stretchDoneEl.addEventListener("change", async (e) => {
-            await mark("stretchDone", e.target.checked);
-          });
-        }
-
-        if (bikeDoneEl) {
-          bikeDoneEl.addEventListener("change", async (e) => {
-            await mark("bikeDone", e.target.checked);
-          });
-        }
-
-        // メモ欄の自動保存
-        const noteEl = $("#note");
-        if (noteEl) {
-          noteEl.addEventListener("input", () => {
-            scheduleAutoSave();
-          });
-        }
-
-        // リセットボタン
-        const resetDayBtn = $("#resetDay");
-        if (resetDayBtn) {
-          resetDayBtn.addEventListener("click", async () => {
-            if (!confirm("本日の記録をリセットしますか？")) return;
-
-            try {
-              const dateKey = keyBase();
-              await fetch(`/api/logs/${dateKey}`, { method: "DELETE" });
-
-              // UIをリセット
-              $$(".set, .str").forEach((ch) => (ch.checked = false));
-              $$("input[id$='Count']").forEach((input) => (input.value = "0"));
-              if (bikeDoneEl) bikeDoneEl.checked = false;
-              if (strengthDoneEl) strengthDoneEl.checked = false;
-              if (stretchDoneEl) stretchDoneEl.checked = false;
-              if (noteEl) noteEl.value = "";
-
-              updateProgress();
-              await renderLogTable();
-            } catch (e) {
-              console.warn("Reset failed:", e);
-            }
-          });
-        }
-      }
-
-      // 初期化処理（データベース中心）
-      window.addEventListener("DOMContentLoaded", async () => {
-        console.log("DOM loaded, initializing with database integration...");
-
-        // ログイン確認
-        const ok = await ensureLogin();
-        if (!ok) return;
-
-        // UI初期化
-        initializeToday();
-        setupEventListeners();
-
-        // 状態復元（データベースから）
-        await restoreState();
-
-        // イベントリスナー設定（データベース連携）
-        await setupDatabaseEventListeners();
-
-        // テーブル描画
-        await renderLogTable();
-      });
-    </script>
   </head>
   <body>
-    <div class="wrap">
-      <header>
-        <div class="title">
-          🏁 ブートキャンプ・スターター <span class="muted" id="greet"></span>
+    <div class="container">
+      <div class="login-card">
+        <div class="logo">
+          <h1>🏋️‍♂️ おうちで筋トレ！</h1>
+          <p>トレーニング記録ポータル</p>
         </div>
-        <div class="chipbar">
-          <span class="chip">今日：<b id="today"></b></span>
-          <span class="chip">目標：有酸素30分＋筋トレ＋ストレッチ</span>
-          <span class="chip">進捗：<b id="progressText">0%</b></span>
-        </div>
-      </header>
-      <div class="card" style="margin-bottom: 12px">
-        <div class="row" style="justify-content: space-between">
-          <div class="row">
-            <span class="tag">RPM 70–80</span>
-            <span class="tag">負荷 40–60%</span>
-            <span class="tag">心拍 120–140（会話OK）</span>
-          </div>
-          <div class="switch">
-            <label class="small"
-              ><input id="hiitToggle" type="checkbox" /> HIITブースト（中盤5分
-              60–70%）</label
-            >
-            <button class="btn secondary" id="resetDay">
-              本日の記録をリセット
-            </button>
-          </div>
-        </div>
-        <div class="progress" style="margin-top: 10px">
-          <span id="progressBar"></span>
-        </div>
-      </div>
-      <div class="grid">
-        <!-- Aerobike -->
-        <section class="card span-7" id="bike">
-          <h2>1. 有酸素（エアロバイク）30分</h2>
-          <div class="muted">
-            ウォームアップ3分 → 中強度22分 → クールダウン5分
-          </div>
-          <div class="timer">
-            <div class="clock" id="clock">00:00</div>
-            <div class="row">
-              <button class="btn" id="start">▶ 開始</button>
-              <button class="btn secondary" id="pause">⏸ 一時停止</button>
-              <button class="btn ghost" id="reset">⟲ リセット</button>
-            </div>
-          </div>
-          <div class="seglist" id="segments"></div>
-          <div class="kpi">
-            <div class="pill">回転数：<b>70–80 rpm</b></div>
-            <div class="pill">負荷：<b>40–60%</b></div>
-            <div class="pill">会話できる強度</div>
-          </div>
-          <label class="small"
-            ><input id="bikeDone" type="checkbox" /> 有酸素30分 完了</label
-          >
-          <div class="note">
-            ヒント：序盤は鼻呼吸＋腹式で心拍を安定。ケイデンス一定を優先し、負荷で微調整。
-          </div>
-        </section>
-        <section class="card span-12" id="bgm">
-          <h2>エアロバイク用BGM</h2>
-          <div class="ex">
-            <div class="meta">
-              <b
-                ><a
-                  href="https://www.youtube.com/watch?v=Hlz_nHElfb4"
-                  style="color: inherit; text-decoration: underline"
-                  target="_blank"
-                  rel="noopener"
-                  >エクササイズBGM / EDM</a
-                ></b
-              >
-              <div class="steps">
-                エアロバイクやランニングにおすすめのEDMメドレー
-              </div>
-            </div>
-          </div>
-        </section>
 
-        <!-- Strength -->
-        <section class="card span-5" id="strength">
-          <h2>2. 筋トレ（フォーム重視）</h2>
-          <div class="list">
-            <div class="ex">
-              <div class="meta">
-                <b
-                  ><a
-                    href="https://www.youtube.com/watch?v=Wjp7V0EK0Zg"
-                    style="color: inherit; text-decoration: underline"
-                    target="_blank"
-                    rel="noopener"
-                    >2-1. スクワット</a
-                  ></b
-                >
-                <span class="tag">15回 × 2セット</span>
-                <div class="steps">
-                  肩幅・背筋まっすぐ／膝がつま先より前に出ない／太ももが床と平行→かかとで押す
-                </div>
-              </div>
-              <div class="checkset">
-                <label
-                  ><input class="set" data-key="sq-1" type="checkbox" />
-                  1</label
-                >
-                <label
-                  ><input class="set" data-key="sq-2" type="checkbox" />
-                  2</label
-                >
-              </div>
-            </div>
-            <div class="ex">
-              <div class="meta">
-                <b
-                  ><a
-                    href="https://www.youtube.com/watch?v=IdQESpQE9ew"
-                    style="color: inherit; text-decoration: underline"
-                    target="_blank"
-                    rel="noopener"
-                    >2-2. プッシュアップ</a
-                  ></b
-                >
-                <span class="tag">10–15回 × 2セット</span>
-                <div class="steps">
-                  手幅やや広め／頭〜かかと一直線（膝つき可）／胸を床スレスレまで
-                </div>
-              </div>
-              <div class="checkset">
-                <label
-                  ><input class="set" data-key="pu-1" type="checkbox" />
-                  1</label
-                >
-                <label
-                  ><input class="set" data-key="pu-2" type="checkbox" />
-                  2</label
-                >
-              </div>
-            </div>
-            <div class="ex">
-              <div class="meta">
-                <b
-                  ><a
-                    href="https://www.youtube.com/watch?v=UgkU2S8VUX4"
-                    style="color: inherit; text-decoration: underline"
-                    target="_blank"
-                    rel="noopener"
-                    >2-3. プランク</a
-                  ></b
-                >
-                <span class="tag">30秒 × 3セット</span>
-                <div class="steps">
-                  肘は肩の真下／頭〜かかと一直線／腹圧で腰を落とさない
-                </div>
-              </div>
-              <div class="checkset">
-                <label
-                  ><input class="set" data-key="pl-1" type="checkbox" />
-                  1</label
-                >
-                <label
-                  ><input class="set" data-key="pl-2" type="checkbox" />
-                  2</label
-                >
-                <label
-                  ><input class="set" data-key="pl-3" type="checkbox" />
-                  3</label
-                >
-                <button class="btn ghost small" id="plank30">
-                  ▶ 30秒タイマー
-                </button>
-              </div>
-            </div>
-            <div class="ex">
-              <div class="meta">
-                <b
-                  ><a
-                    href="https://www.youtube.com/watch?v=FvU7izWY358"
-                    style="color: inherit; text-decoration: underline"
-                    target="_blank"
-                    rel="noopener"
-                    >2-4. バードドッグ</a
-                  ></b
-                >
-                <span class="tag">左右10回ずつ × 2セット</span>
-                <div class="steps">
-                  四つん這い／反対の手足をまっすぐ／腰高を変えず体幹安定
-                </div>
-              </div>
-              <div class="checkset">
-                <label
-                  ><input class="set" data-key="bd-1" type="checkbox" />
-                  1</label
-                >
-                <label
-                  ><input class="set" data-key="bd-2" type="checkbox" />
-                  2</label
-                >
-              </div>
-            </div>
-            <div class="ex">
-              <div class="meta">
-                <b
-                  ><a
-                    href="https://www.youtube.com/shorts/Nzbrmw71HdY"
-                    style="color: inherit; text-decoration: underline"
-                    target="_blank"
-                    rel="noopener"
-                    >2-6. マウンテンクライマー</a
-                  ></b
-                >
-                <span class="tag">左右20回ずつ × 2セット</span>
-                <div class="steps">
-                  プッシュアップ姿勢／膝を胸に引き寄せ素早く入替／腰の上下は最小に
-                </div>
-              </div>
-              <div class="checkset">
-                <label
-                  ><input class="set" data-key="mc-1" type="checkbox" />
-                  1</label
-                >
-                <label
-                  ><input class="set" data-key="mc-2" type="checkbox" />
-                  2</label
-                >
-              </div>
-            </div>
-            <label class="small"
-              ><input id="strengthDone" type="checkbox" /> 筋トレ 全メニュー
-              完了</label
-            >
+        <div id="error-message" class="error hidden"></div>
+
+        <!-- ログインフォーム -->
+        <form id="login-form">
+          <div class="form-group">
+            <label for="login-username">ユーザーID</label>
+            <input type="text" id="login-username" name="username" required />
           </div>
-        </section>
-        <!-- Stretch -->
-        <section class="card span-12" id="stretch">
-          <h2>3. ストレッチ（2〜3分）</h2>
-          <div class="list">
-            <label class="small"
-              ><input class="str" data-key="st-thigh" type="checkbox" />
-              太もも前後</label
-            >
-            <label class="small"
-              ><input class="str" data-key="st-calf" type="checkbox" />
-              ふくらはぎ</label
-            >
-            <label class="small"
-              ><input class="str" data-key="st-shoulder" type="checkbox" />
-              肩・背中</label
-            >
-            <label class="small"
-              ><input class="str" data-key="st-chest" type="checkbox" />
-              胸</label
-            >
-            <div class="note">
-              反動をつけず、深呼吸しながら15–20秒キープを数セット。
-            </div>
-            <label class="small"
-              ><input id="stretchDone" type="checkbox" /> ストレッチ 完了</label
-            >
-          </div>
-        </section>
-        <section class="card span-12" id="journal">
-          <h2>4. 日次ログ（保存・履歴・エクスポート）</h2>
-          <div
-            class="row"
-            style="align-items: stretch; gap: 12px; margin: 8px 0"
-          >
-            <textarea
-              id="note"
-              placeholder="今日のメモ（体調、負荷、気づき等）"
-              style="
-                flex: 1;
-                min-height: 70px;
-                border-radius: 12px;
-                border: 1px solid #223259;
-                background: #0f1831;
-                color: #eaf1ff;
-                padding: 10px;
-              "
-            ></textarea>
-            <div style="display: flex; flex-direction: column; gap: 8px">
-              <button class="btn" id="saveLog">💾 今日の記録を保存</button>
-              <button class="btn secondary" id="exportCsv">
-                📤 CSVエクスポート
-              </button>
-              <button class="btn ghost" id="clearAllLogs">
-                🗑 すべての記録を削除
-              </button>
-            </div>
-          </div>
-          <div class="row" style="gap: 8px; margin: 6px 0 0">
+          <div class="form-group">
+            <label for="login-password">パスワード</label>
             <input
-              accept="application/json"
-              id="importJsonFile"
-              style="display: none"
-              type="file"
+              type="password"
+              id="login-password"
+              name="password"
+              required
             />
-            <button class="btn secondary" id="exportJson">
-              🧰 JSONバックアップ
-            </button>
-            <button class="btn ghost" id="importJson">📥 JSON読み込み</button>
           </div>
-          <div class="list">
-            <div class="small muted">
-              ※ 保存すると下の履歴に追加されます（ブラウザのローカルに保存）。
-            </div>
-            <div class="log-table-wrap">
-              <table
-                id="logTable"
-                style="width: 100%; border-collapse: collapse; font-size: 13px"
-              >
-                <thead>
-                  <tr style="background: #0b1328">
-                    <th
-                      style="
-                        padding: 8px;
-                        text-align: left;
-                        border-bottom: 1px solid #223259;
-                      "
-                    >
-                      日時
-                    </th>
-                    <th
-                      style="
-                        padding: 8px;
-                        text-align: left;
-                        border-bottom: 1px solid #223259;
-                      "
-                    >
-                      進捗(%)
-                    </th>
-                    <th
-                      style="
-                        padding: 8px;
-                        text-align: left;
-                        border-bottom: 1px solid #223259;
-                      "
-                    >
-                      有酸素
-                    </th>
-                    <th
-                      style="
-                        padding: 8px;
-                        text-align: left;
-                        border-bottom: 1px solid #223259;
-                      "
-                    >
-                      スク
-                    </th>
-                    <th
-                      style="
-                        padding: 8px;
-                        text-align: left;
-                        border-bottom: 1px solid #223259;
-                      "
-                    >
-                      腕立
-                    </th>
-                    <th
-                      style="
-                        padding: 8px;
-                        text-align: left;
-                        border-bottom: 1px solid #223259;
-                      "
-                    >
-                      プラ
-                    </th>
-                    <th
-                      style="
-                        padding: 8px;
-                        text-align: left;
-                        border-bottom: 1px solid #223259;
-                      "
-                    >
-                      BD
-                    </th>
-                    <th
-                      style="
-                        padding: 8px;
-                        text-align: left;
-                        border-bottom: 1px solid #223259;
-                      "
-                    >
-                      HL
-                    </th>
-                    <th
-                      style="
-                        padding: 8px;
-                        text-align: left;
-                        border-bottom: 1px solid #223259;
-                      "
-                    >
-                      MC
-                    </th>
-                    <th
-                      style="
-                        padding: 8px;
-                        text-align: left;
-                        border-bottom: 1px solid #223259;
-                      "
-                    >
-                      ストレッチ
-                    </th>
-                    <th
-                      style="
-                        padding: 8px;
-                        text-align: left;
-                        border-bottom: 1px solid #223259;
-                      "
-                    >
-                      メモ
-                    </th>
-                    <th
-                      style="
-                        padding: 8px;
-                        text-align: left;
-                        border-bottom: 1px solid #223259;
-                      "
-                    >
-                      操作
-                    </th>
-                  </tr>
-                </thead>
-                <tbody></tbody>
-              </table>
-            </div>
+          <button type="submit" class="btn" id="login-btn">ログイン</button>
+        </form>
+
+        <!-- 新規登録フォーム -->
+        <form id="register-form" class="hidden">
+          <div class="form-group">
+            <label for="register-username">ユーザーID</label>
+            <input
+              type="text"
+              id="register-username"
+              name="username"
+              required
+            />
           </div>
-        </section>
+          <div class="form-group">
+            <label for="register-password">パスワード</label>
+            <input
+              type="password"
+              id="register-password"
+              name="password"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="register-password-confirm">パスワード確認</label>
+            <input
+              type="password"
+              id="register-password-confirm"
+              name="passwordConfirm"
+              required
+            />
+          </div>
+          <button type="submit" class="btn" id="register-btn">新規登録</button>
+        </form>
+
+        <div class="toggle-form">
+          <a id="toggle-to-register">新規アカウント作成</a>
+          <a id="toggle-to-login" class="hidden">ログインに戻る</a>
+        </div>
       </div>
     </div>
-    <footer>
-      <span class="quote" id="quote"
-        >「最初の一歩が、いちばん体温を上げる。」</span
-      >
-      <span class="chip" id="dailyBadge"
-        >今日の連続日数：<b id="streak">0</b> 🔥</span
-      >
-    </footer>
+
     <script>
-      // データベース中心のシンプルなIIFE（即時実行関数）
-      (function () {
-        // === 引用文のローテーション ===
-        const quotes = [
-          "小さく始めて、大きく続ける。",
-          "昨日より1mm前へ。",
-          "迷うなら、やってから迷う。",
-          "継続は才能を越える。",
-          "フォームは正義。回数は結果。",
-        ];
+      // フォーム切り替え
+      const loginForm = document.getElementById("login-form");
+      const registerForm = document.getElementById("register-form");
+      const toggleToRegister = document.getElementById("toggle-to-register");
+      const toggleToLogin = document.getElementById("toggle-to-login");
+      const errorMessage = document.getElementById("error-message");
 
-        function rotateQuote() {
-          const quoteEl = document.querySelector("#quote");
-          if (quoteEl) {
-            quoteEl.textContent = `「${
-              quotes[Math.floor(Math.random() * quotes.length)]
-            }」`;
-          }
+      toggleToRegister.addEventListener("click", () => {
+        loginForm.classList.add("hidden");
+        registerForm.classList.remove("hidden");
+        toggleToRegister.classList.add("hidden");
+        toggleToLogin.classList.remove("hidden");
+        clearError();
+      });
+
+      toggleToLogin.addEventListener("click", () => {
+        registerForm.classList.add("hidden");
+        loginForm.classList.remove("hidden");
+        toggleToLogin.classList.add("hidden");
+        toggleToRegister.classList.remove("hidden");
+        clearError();
+      });
+
+      function showError(message) {
+        errorMessage.textContent = message;
+        errorMessage.classList.remove("hidden");
+      }
+
+      function clearError() {
+        errorMessage.classList.add("hidden");
+      }
+
+      // ログイン処理
+      loginForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        clearError();
+
+        const username = document.getElementById("login-username").value;
+        const password = document.getElementById("login-password").value;
+        const loginBtn = document.getElementById("login-btn");
+
+        if (!username || !password) {
+          showError("ユーザーIDとパスワードを入力してください");
+          return;
         }
 
-        setInterval(rotateQuote, 12000);
+        loginBtn.disabled = true;
+        loginBtn.textContent = "ログイン中...";
 
-        // === エアロバイクタイマー機能 ===
-        const segmentsEl = document.querySelector("#segments");
-        const hiitToggle = document.querySelector("#hiitToggle");
-
-        function baseSegments() {
-          return [
-            { name: "ウォームアップ", mins: 3, tip: "心拍100–110" },
-            { name: "中強度", mins: 22, tip: "心拍120–140" },
-            { name: "クールダウン", mins: 5, tip: "軽め" },
-          ];
-        }
-
-        function withHIIT() {
-          return [
-            { name: "ウォームアップ", mins: 3, tip: "心拍100–110" },
-            { name: "中強度", mins: 8, tip: "120–140" },
-            { name: "HIIT", mins: 5, tip: "負荷60–70%" },
-            { name: "中強度", mins: 9, tip: "120–140" },
-            { name: "クールダウン", mins: 5, tip: "軽め" },
-          ];
-        }
-
-        function renderSegments() {
-          if (!segmentsEl || !hiitToggle) return;
-
-          const arr = hiitToggle.checked ? withHIIT() : baseSegments();
-          segmentsEl.innerHTML = "";
-          arr.forEach((seg, i) => {
-            const div = document.createElement("div");
-            div.className = "seg";
-            div.dataset.idx = i;
-            div.innerHTML = `<b>${seg.name}</b>：${seg.mins}分 <span class="muted">(${seg.tip})</span>`;
-            segmentsEl.appendChild(div);
+        try {
+          const response = await fetch("/api/login", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ username, password }),
           });
+
+          if (response.ok) {
+            // ログイン成功 - メインページにリダイレクト
+            window.location.href = "/";
+          } else {
+            const error = await response.json();
+            showError(error.error || "ログインに失敗しました");
+          }
+        } catch (error) {
+          showError("ネットワークエラーが発生しました");
+        } finally {
+          loginBtn.disabled = false;
+          loginBtn.textContent = "ログイン";
+        }
+      });
+
+      // 新規登録処理
+      registerForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        clearError();
+
+        const username = document.getElementById("register-username").value;
+        const password = document.getElementById("register-password").value;
+        const passwordConfirm = document.getElementById(
+          "register-password-confirm"
+        ).value;
+        const registerBtn = document.getElementById("register-btn");
+
+        if (!username || !password || !passwordConfirm) {
+          showError("全ての項目を入力してください");
+          return;
         }
 
-        if (hiitToggle) {
-          hiitToggle.addEventListener("change", () => {
-            renderSegments();
-            resetTimer();
+        if (password !== passwordConfirm) {
+          showError("パスワードが一致しません");
+          return;
+        }
+
+        if (password.length < 4) {
+          showError("パスワードは4文字以上で入力してください");
+          return;
+        }
+
+        registerBtn.disabled = true;
+        registerBtn.textContent = "登録中...";
+
+        try {
+          const response = await fetch("/api/register", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ username, password }),
           });
-        }
 
-        renderSegments();
-
-        // タイマー関連の変数
-        let timer = null,
-          totalSec = 0,
-          plan = [],
-          cursor = 0,
-          segRemain = 0,
-          running = false;
-
-        function loadPlan() {
-          if (!hiitToggle) return;
-
-          plan = (hiitToggle.checked ? withHIIT() : baseSegments()).map(
-            (s) => ({ ...s, sec: s.mins * 60 })
-          );
-          totalSec = plan.reduce((a, b) => a + b.sec, 0);
-          cursor = 0;
-          segRemain = plan[0].sec;
-          highlightSeg();
-          const clockEl = document.querySelector("#clock");
-          if (clockEl) clockEl.textContent = fmt(totalSec);
-        }
-
-        function fmt(sec) {
-          const m = Math.floor(sec / 60),
-            s = sec % 60;
-          return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
-        }
-
-        function highlightSeg() {
-          const segs = document.querySelectorAll("#segments .seg");
-          segs.forEach((el, i) => {
-            el.style.borderColor = i === cursor ? "#33d1ff" : "#2a3968";
-            el.style.boxShadow =
-              i === cursor ? "0 0 0 1px #33d1ff inset" : "none";
-          });
-        }
-
-        function beep() {
-          try {
-            const a = new (window.AudioContext || window.webkitAudioContext)();
-            const o = a.createOscillator(),
-              g = a.createGain();
-            o.type = "sine";
-            o.frequency.value = 880;
-            o.connect(g);
-            g.connect(a.destination);
-            g.gain.setValueAtTime(0.001, a.currentTime);
-            g.gain.exponentialRampToValueAtTime(0.2, a.currentTime + 0.01);
-            o.start();
-            setTimeout(() => {
-              g.gain.exponentialRampToValueAtTime(0.001, a.currentTime + 0.18);
-              o.stop(a.currentTime + 0.2);
-            }, 180);
-          } catch (e) {}
-        }
-
-        function tick() {
-          if (!running) return;
-          if (totalSec <= 0) {
-            finishBike();
-            return;
+          if (response.ok) {
+            // 登録成功 - メインページにリダイレクト
+            window.location.href = "/";
+          } else {
+            const error = await response.json();
+            showError(error.error || "登録に失敗しました");
           }
-          totalSec--;
-          segRemain--;
-          const clockEl = document.querySelector("#clock");
-          if (clockEl) clockEl.textContent = fmt(totalSec);
+        } catch (error) {
+          showError("ネットワークエラーが発生しました");
+        } finally {
+          registerBtn.disabled = false;
+          registerBtn.textContent = "新規登録";
+        }
+      });
 
-          // 3分ごとに音を鳴らす
-          if (totalSec > 0 && totalSec % 180 === 0) {
-            beep();
+      // ページ読み込み時にログイン状態をチェック
+      window.addEventListener("load", async () => {
+        try {
+          const response = await fetch("/api/me");
+          const data = await response.json();
+          if (data.user) {
+            // 既にログイン済み - メインページにリダイレクト
+            window.location.href = "/";
           }
-
-          if (segRemain <= 0) {
-            cursor++;
-            if (cursor < plan.length) {
-              segRemain = plan[cursor].sec;
-              highlightSeg();
-              beep();
-            }
-          }
+        } catch (error) {
+          // ログインしていない、または確認できない場合はログイン画面を表示
         }
-
-        function startTimer() {
-          if (running) return;
-          if (totalSec <= 0) loadPlan();
-          running = true;
-          timer = setInterval(tick, 1000);
-        }
-
-        function pauseTimer() {
-          running = false;
-          if (timer) clearInterval(timer);
-        }
-
-        function resetTimer() {
-          pauseTimer();
-          loadPlan();
-        }
-
-        async function finishBike() {
-          pauseTimer();
-          const clockEl = document.querySelector("#clock");
-          if (clockEl) clockEl.textContent = "完了！";
-          const bikeDoneEl = document.querySelector("#bikeDone");
-          if (bikeDoneEl) {
-            bikeDoneEl.checked = true;
-            await mark("bikeDone", true);
-          }
-          beep();
-          setTimeout(beep, 220);
-        }
-
-        // タイマーボタンのイベントリスナー
-        const startBtn = document.querySelector("#start");
-        const pauseBtn = document.querySelector("#pause");
-        const resetBtn = document.querySelector("#reset");
-
-        if (startBtn) startBtn.addEventListener("click", startTimer);
-        if (pauseBtn) pauseBtn.addEventListener("click", pauseTimer);
-        if (resetBtn) resetBtn.addEventListener("click", resetTimer);
-
-        loadPlan();
-
-        // === プランク30秒タイマー ===
-        const plank30Btn = document.querySelector("#plank30");
-        if (plank30Btn) {
-          plank30Btn.addEventListener("click", () => {
-            plank30Btn.disabled = true;
-            plank30Btn.textContent = "⏳ 30秒";
-            let s = 30;
-            const t = setInterval(() => {
-              s--;
-              plank30Btn.textContent = `⏳ ${s}秒`;
-              if (s <= 0) {
-                clearInterval(t);
-                beep();
-                plank30Btn.textContent = "▶ 30秒タイマー";
-                plank30Btn.disabled = false;
-              }
-            }, 1000);
-          });
-        }
-
-        // === 連続日数（ストリーク）管理 ===
-        function updateStreak() {
-          const LSKEY = (suffix) => `bootcamp.${suffix}`;
-          const keyBase = () => new Date().toISOString().slice(0, 10);
-
-          const last = localStorage.getItem(LSKEY("lastOpen"));
-          const today = keyBase();
-
-          if (last !== today) {
-            // 新しい日 - 昨日の実績をチェック
-            const yKey = new Date(Date.now() - 86400000)
-              .toISOString()
-              .slice(0, 10);
-            const yState = JSON.parse(
-              localStorage.getItem(`bootcamp.${yKey}.state`) || "{}"
-            );
-            const had =
-              yState.bikeDone || yState.strengthDone || yState.stretchDone;
-
-            let streak = Number(localStorage.getItem(LSKEY("streak")) || "0");
-            if (had) {
-              streak = streak + 1;
-            } else {
-              streak = 0;
-            }
-
-            localStorage.setItem(LSKEY("streak"), String(streak));
-            localStorage.setItem(LSKEY("lastOpen"), today);
-          }
-
-          // ストリーク表示を更新
-          const streak = Number(localStorage.getItem(LSKEY("streak")) || "0");
-          const streakEl = document.querySelector("#streak");
-          if (streakEl) streakEl.textContent = streak;
-        }
-
-        updateStreak();
-      })();
+      });
     </script>
   </body>
 </html>
