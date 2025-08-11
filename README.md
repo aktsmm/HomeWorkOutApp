@@ -31,12 +31,16 @@ Node.js（JavaScript）で作られており、データベースには SQLite �
    nvm（Windows 用 Node バージョン管理）を使うと安全です：
 
    - nvm-windows のインストール（未導入の場合）
+
      - 公式: https://github.com/coreybutler/nvm-windows
      - winget 例：
+
        ```powershell
        winget install -e --id CoreyButler.NVMforWindows
        # 端末をいったん閉じて開き直す
        nvm install 20.17.0
+       # 利用可能なnodeバージョンを確認
+       nvm list
        nvm use 20.17.0
        node -v   # v20.x を確認
        ```
@@ -94,14 +98,21 @@ npm start
 
 ※ npm install / npm ci が失敗した場合は、以下の「トラブルシューティング」を参照してください。
 
+必要に応じて（大事）:
+
+- 直前に `git pull` した／依存関係エラー（Cannot find module など）が出る → もう一度 `npm install` を実行してから起動してください。
+- Node のバージョンを切り替えた（nvm など）場合も、再度 `npm install` が必要になることがあります。
+
 ---
 
 ### ステップ 5: ブラウザでアクセス
 
 - アドレスバーに以下を入力してアクセス：
-  ```
+
+  ```text
   http://localhost:3000
   ```
+
 - `0.0.0.0` ではアクセスできません（Windows では無効アドレス扱いになります）
 
 ---
@@ -119,7 +130,7 @@ npm start
 
 例:
 
-```
+```text
 prebuild-install warn install No prebuilt binaries found (target=22.x runtime=node ... platform=win32)
 gyp ERR! find VS You need to install the latest version of Visual Studio including the "Desktop development with C++" workload.
 ```
@@ -141,11 +152,12 @@ node -v
 npm ci   # もしくは npm install
 ```
 
-2. Node 22 を使い続ける場合（上級者向け）
+1. Node 22 を使い続ける場合（上級者向け）
 
 - Visual Studio 2022 Build Tools を導入し、「C++ によるデスクトップ開発」ワークロードと Windows 10/11 SDK を追加
 - 参考: [node-gyp（Windows）手順](https://github.com/nodejs/node-gyp#on-windows)
 - その後、必要に応じて次を実行
+
   ```powershell
   npm config set msvs_version 2022
   npm ci   # もしくは npm install

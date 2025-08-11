@@ -218,7 +218,7 @@ app.use(express.static(path.join(__dirname, "public")));
 // バインド先ホストを環境変数から切り替え可能にする（未設定なら Node のデフォルト動作に従う）
 // 例:
 //   HOST=127.0.0.1 -> ローカルのみ
-//   HOST=0.0.0.0   -> 全インターフェイス（他端末/コンテナからの接続可）
+   HOST=0.0.0.0   -> 全インターフェイス（他端末/コンテナからの接続可）
 //   HOST=::        -> IPv6 未指定（環境により挙動が異なるため注意）
 const HOST = process.env.HOST; // 未設定(undefined)なら host 省略で listen
 
