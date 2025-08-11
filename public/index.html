@@ -301,6 +301,33 @@
       }
     </style>
     <script>
+      // --- 未定義関数の追加 ---
+      function initializeToday() {
+        // 進捗バーやチェックボックスなどを初期状態に戻す
+        collectSets();
+        collectStretch();
+        updateProgress();
+        // メモ欄も空に
+        const noteEl = document.querySelector("#note");
+        if (noteEl) noteEl.value = "";
+      }
+      function testProgressBar() {
+        updateProgress();
+      }
+      function setupEventListeners() {
+        // 保存ボタン
+        const saveBtn = document.getElementById("saveLog");
+        if (saveBtn)
+          saveBtn.addEventListener("click", () => {
+            saveTodaySnapshot(false);
+          });
+        // 他のボタンも必要に応じて追加
+      }
+      function restoreState() {
+        collectSets();
+        collectStretch();
+        updateProgress();
+      }
       // --- ログイン状態の確認（リダイレクト対応） ---
       async function ensureLogin() {
         const me = await fetch("/api/me")
@@ -501,7 +528,6 @@
         restoreState();
         updateProgress();
         await renderLogTable(); // サーバー最新で描画
-        // ...existing code...
       });
     </script>
   </head>
