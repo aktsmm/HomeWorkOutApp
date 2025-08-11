@@ -12,11 +12,13 @@ Node.js（JavaScript）で作られており、データベースには SQLite �
 
 ## 🚀 はじめ方（初心者向け）
 
+重要: Windows での動作安定のため、Node.js は LTS（推奨: 20.x）をご利用ください。Node 22 だと better-sqlite3 のプリビルドが無く、Visual Studio Build Tools を使ったネイティブビルドが必要になり失敗しやすいです。
+
 ### 必要なもの
 
 このアプリを動かすために、以下をインストールしてください：
 
-1. **Node.js**（バージョン 18 以上推奨）
+1. **Node.js**（推奨: LTS 20.x）
 
    - [Node.js 公式サイト](https://nodejs.org/)からダウンロード
    - インストール後、コマンドでバージョンを確認：
@@ -25,6 +27,19 @@ Node.js（JavaScript）で作られており、データベースには SQLite �
      npm -v
      ```
    - 両方ともバージョンが表示されれば OK
+
+   nvm（Windows 用 Node バージョン管理）を使うと安全です：
+
+   - nvm-windows のインストール（未導入の場合）
+     - 公式: https://github.com/coreybutler/nvm-windows
+     - winget 例：
+       ```powershell
+       winget install -e --id CoreyButler.NVMforWindows
+       # 端末をいったん閉じて開き直す
+       nvm install 20.17.0
+       nvm use 20.17.0
+       node -v   # v20.x を確認
+       ```
 
 2. **Git**（ソースコードのダウンロード用）
    - [Git 公式サイト](https://git-scm.com/)からダウンロード
@@ -77,6 +92,8 @@ npm run dev
 npm start
 ```
 
+※ npm install / npm ci が失敗した場合は、以下の「トラブルシューティング」を参照してください。
+
 ---
 
 ### ステップ 5: ブラウザでアクセス
@@ -93,6 +110,48 @@ npm start
 
 - `npm install` 実行時に Visual Studio Build Tools のメッセージが出る場合がありますが、このアプリは C++ ネイティブモジュールを利用していないため無視して構いません
 - SQLite はクロスプラットフォーム対応なので、Windows/Mac/Linux すべてで動作します
+
+ただし better-sqlite3 はネイティブアドオンのため、Node 22 などプリビルドが提供されていないバージョンではビルド環境（C++ ツールセットと Windows SDK）が必要です。簡単に動かすには Node 20 LTS をおすすめします。
+
+## 🧰 トラブルシューティング
+
+### 症状: npm ci/npm install で better-sqlite3 のビルドに失敗する
+
+例:
+
+```
+prebuild-install warn install No prebuilt binaries found (target=22.x runtime=node ... platform=win32)
+gyp ERR! find VS You need to install the latest version of Visual Studio including the "Desktop development with C++" workload.
+```
+
+原因:
+
+- Node 22 など、better-sqlite3 のプリビルドが未提供な Node 版を使っている
+- そのため node-gyp がローカルビルドを試みるが、Windows SDK などが不足して失敗
+
+解決策（推奨の順）:
+
+1. Node を LTS 20.x に切り替える（最短）
+
+```powershell
+# nvm-windows が入っている前提
+nvm install 20.17.0
+nvm use 20.17.0
+node -v
+npm ci   # もしくは npm install
+```
+
+2. Node 22 を使い続ける場合（上級者向け）
+
+- Visual Studio 2022 Build Tools を導入し、「C++ によるデスクトップ開発」ワークロードと Windows 10/11 SDK を追加
+- 参考: [node-gyp（Windows）手順](https://github.com/nodejs/node-gyp#on-windows)
+- その後、必要に応じて次を実行
+  ```powershell
+  npm config set msvs_version 2022
+  npm ci   # もしくは npm install
+  ```
+
+インストールに失敗した直後に `npm run dev` を実行すると、`Cannot find package 'express'` のようなエラーになります。先に依存関係のインストールを成功させてから起動してください。
 
 ---
 
@@ -119,6 +178,25 @@ HomeWorkOutApp/
 - **データベース**: SQLite (better-sqlite3)
 - **認証**: express-session + bcrypt
 - **フロントエンド**: HTML + CSS + JavaScript
+
+## ✅ 動作確認環境
+
+- 最終確認日: 2025-08-12
+- OS: Windows 11 24H2（Build 26100）
+- Shell: PowerShell 7.5.2
+- Node.js: 20.x LTS（nvm-windows で切替）
+- npm: 10.x
+- 主要ライブラリ（抜粋）:
+  - express 4.19.x
+  - express-session 1.17.x
+  - better-sqlite3 9.4.x
+  - sqlite3 5.1.x
+  - bcrypt 5.1.x
+- ブラウザ: Microsoft Edge / Google Chrome（最新版）
+
+### 備考
+
+- Node 22.x では better-sqlite3 のプリビルドが提供されないケースがあり、Visual Studio Build Tools と Windows SDK が必要になる場合があります。簡単に動かすには Node 20 LTS を推奨します。
 
 ## 📄 ライセンス
 

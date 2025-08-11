@@ -215,6 +215,37 @@ app.get("/", (req, res) => {
 
 app.use(express.static(path.join(__dirname, "public")));
 
-app.listen(PORT, () => {
-  console.log(`Bootcamp local server running: http://0.0.0.0:${PORT}`);
-});
+// バインド先ホストを環境変数から切り替え可能にする（未設定なら Node のデフォルト動作に従う）
+// 例:
+//   HOST=127.0.0.1 -> ローカルのみ
+//   HOST=0.0.0.0   -> 全インターフェイス（他端末/コンテナからの接続可）
+//   HOST=::        -> IPv6 未指定（環境により挙動が異なるため注意）
+const HOST = process.env.HOST; // 未設定(undefined)なら host 省略で listen
+
+// 実バインド情報をログするため、server を受け取る
+let server;
+if (HOST) {
+  // ホスト指定あり
+  server = app.listen(PORT, HOST, () => {
+    const addr = server.address();
+    if (typeof addr === "string") {
+      console.log(`[BOOT] Server listening on pipe ${addr}`);
+    } else {
+      console.log(
+        `[BOOT] Server listening http://${addr.address}:${addr.port} (${addr.family})`
+      );
+    }
+  });
+} else {
+  // ホスト未指定（Node のデフォルト: 未指定アドレスにバインド）
+  server = app.listen(PORT, () => {
+    const addr = server.address();
+    if (typeof addr === "string") {
+      console.log(`[BOOT] Server listening on pipe ${addr}`);
+    } else {
+      console.log(
+        `[BOOT] Server listening http://${addr.address}:${addr.port} (${addr.family})`
+      );
+    }
+  });
+}
