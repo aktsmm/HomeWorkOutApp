@@ -19,7 +19,7 @@ const HOST = process.env.HOST; // オプショナル
 
 // デフォルトユーザー設定
 const ADMIN_USER = process.env.ADMIN_USER || "admin";
-const ADMIN_PASS = process.env.ADMIN_PASS || "pasword";
+const ADMIN_PASS = process.env.ADMIN_PASS || "password";
 
 // === データベース設定 ===
 const dbPath = path.join(__dirname, "db.sqlite");
