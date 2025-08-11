@@ -319,7 +319,7 @@
 
       // === グローバル関数定義 ===
       // これらの関数をグローバルスコープで定義してIIFE内の重複定義を回避
-      
+
       function collectSets() {
         const sets = {};
         $$(".set").forEach((ch) => {
@@ -341,23 +341,23 @@
       function updateProgress() {
         const progressBar = $(".progress > span");
         if (!progressBar) return;
-        
+
         const s = getState();
         const sets = collectSets();
         const stretchParts = collectStretch();
-        
+
         // 基本的な完了状況（70%の重み）
-        const basicProgress = ((s.bikeDone ? 1 : 0) + 
-                              (s.strengthDone ? 1 : 0) + 
+        const basicProgress = ((s.bikeDone ? 1 : 0) +
+                              (s.strengthDone ? 1 : 0) +
                               (s.stretchDone ? 1 : 0)) / 3;
-        
+
         // 詳細な実行状況（30%の重み）
-        const detailProgress = (Object.values(sets).filter(v => v > 0).length + 
+        const detailProgress = (Object.values(sets).filter(v => v > 0).length +
                                Object.values(stretchParts).filter(v => v === true).length) / 13;
-        
+
         const totalProgress = Math.round(100 * (0.7 * basicProgress + 0.3 * detailProgress));
         progressBar.style.width = totalProgress + "%";
-        
+
         // 進捗表示の更新
         const progressText = $(".kpi .pill");
         if (progressText) {
@@ -394,7 +394,7 @@
         const noteEl = document.querySelector("#note");
         if (noteEl) noteEl.value = "";
       }
-      
+
       function testProgressBar() {
         updateProgress();
       }
@@ -406,7 +406,7 @@
         try {
           const ok = await ensureLogin();
           if (!ok) return {};
-          
+
           const dateKey = keyBase();
           const res = await fetch(`/api/logs/${dateKey}`);
           if (!res.ok) {
@@ -415,7 +415,7 @@
             }
             throw new Error(`Server error: ${res.status}`);
           }
-          
+
           const data = await res.json();
           return data || {};
         } catch (e) {
@@ -429,13 +429,13 @@
         try {
           const ok = await ensureLogin();
           if (!ok) return;
-          
+
           const entry = {
             ...state,
             date: new Date().toISOString(),
             dateKey: keyBase(),
           };
-          
+
           await pushTodayToServer(entry);
         } catch (e) {
           console.warn("Failed to set state to server:", e);
@@ -459,7 +459,7 @@
         try {
           const ok = await ensureLogin();
           if (!ok) return [];
-          
+
           const res = await fetch("/api/logs");
           if (!res.ok) throw new Error(`Server error: ${res.status}`);
           const logs = await res.json();
@@ -556,7 +556,7 @@
       // 状態復元
       async function restoreState() {
         const state = await getState();
-        
+
         // チェックボックスの状態を復元
         $$(".set").forEach(async (ch) => {
           const key = `set.${ch.dataset.key}`;
@@ -714,11 +714,11 @@
             <div style="display: flex; align-items: center; gap: 12px;">
               <span style="color: var(--accent); font-weight: 600;">👤 ${username}</span>
               <button onclick="logout()" style="
-                background: var(--danger); 
-                color: white; 
-                border: none; 
-                padding: 6px 12px; 
-                border-radius: 6px; 
+                background: var(--danger);
+                color: white;
+                border: none;
+                padding: 6px 12px;
+                border-radius: 6px;
                 cursor: pointer;
                 font-size: 12px;
               ">ログアウト</button>
@@ -867,7 +867,7 @@
           const state = await getState();
           const sets = collectSets();
           const stretchParts = collectStretch();
-          
+
           const entry = {
             date: new Date().toISOString(),
             dateKey: keyBase(),
@@ -882,7 +882,7 @@
           };
 
           await pushTodayToServer(entry);
-          
+
           if (!silent) {
             alert("今日の記録を保存しました！");
             await renderLogTable();
@@ -977,11 +977,11 @@
         if (resetDayBtn) {
           resetDayBtn.addEventListener("click", async () => {
             if (!confirm("本日の記録をリセットしますか？")) return;
-            
+
             try {
               const dateKey = keyBase();
               await fetch(`/api/logs/${dateKey}`, { method: "DELETE" });
-              
+
               // UIをリセット
               $$(".set, .str").forEach((ch) => (ch.checked = false));
               $$("input[id$='Count']").forEach((input) => (input.value = "0"));
@@ -989,7 +989,7 @@
               if (strengthDoneEl) strengthDoneEl.checked = false;
               if (stretchDoneEl) stretchDoneEl.checked = false;
               if (noteEl) noteEl.value = "";
-              
+
               updateProgress();
               await renderLogTable();
             } catch (e) {
@@ -1002,21 +1002,21 @@
       // 初期化処理（データベース中心）
       window.addEventListener("DOMContentLoaded", async () => {
         console.log("DOM loaded, initializing with database integration...");
-        
+
         // ログイン確認
         const ok = await ensureLogin();
         if (!ok) return;
-        
+
         // UI初期化
         initializeToday();
         setupEventListeners();
-        
+
         // 状態復元（データベースから）
         await restoreState();
-        
+
         // イベントリスナー設定（データベース連携）
         await setupDatabaseEventListeners();
-        
+
         // テーブル描画
         await renderLogTable();
       });
@@ -1471,7 +1471,7 @@
           "継続は才能を越える。",
           "フォームは正義。回数は結果。",
         ];
-        
+
         function rotateQuote() {
           const quoteEl = document.querySelector("#quote");
           if (quoteEl) {
@@ -1480,7 +1480,7 @@
             }」`;
           }
         }
-        
+
         setInterval(rotateQuote, 12000);
 
         // === エアロバイクタイマー機能 ===
@@ -1507,7 +1507,7 @@
 
         function renderSegments() {
           if (!segmentsEl || !hiitToggle) return;
-          
+
           const arr = hiitToggle.checked ? withHIIT() : baseSegments();
           segmentsEl.innerHTML = "";
           arr.forEach((seg, i) => {
@@ -1538,7 +1538,7 @@
 
         function loadPlan() {
           if (!hiitToggle) return;
-          
+
           plan = (hiitToggle.checked ? withHIIT() : baseSegments()).map(
             (s) => ({ ...s, sec: s.mins * 60 })
           );
@@ -1675,143 +1675,12 @@
         function updateStreak() {
           const LSKEY = (suffix) => `bootcamp.${suffix}`;
           const keyBase = () => new Date().toISOString().slice(0, 10);
-          
+
           const last = localStorage.getItem(LSKEY("lastOpen"));
           const today = keyBase();
-          
+
           if (last !== today) {
             // 新しい日 - 昨日の実績をチェック
-            const yKey = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
-            const yState = JSON.parse(localStorage.getItem(`bootcamp.${yKey}.state`) || "{}");
-            const had = yState.bikeDone || yState.strengthDone || yState.stretchDone;
-            
-            let streak = Number(localStorage.getItem(LSKEY("streak")) || "0");
-            if (had) {
-              streak = streak + 1;
-            } else {
-              streak = 0;
-            }
-            
-            localStorage.setItem(LSKEY("streak"), String(streak));
-            localStorage.setItem(LSKEY("lastOpen"), today);
-          }
-          
-          // ストリーク表示を更新
-          const streak = Number(localStorage.getItem(LSKEY("streak")) || "0");
-          const streakEl = document.querySelector("#streak");
-          if (streakEl) streakEl.textContent = streak;
-        }
-
-        updateStreak();
-      })();
-    </script>
-              hiit: !!document.querySelector("#hiitToggle")?.checked,
-              sets: {
-                sq: sets.sq || 0,
-                pu: sets.pu || 0,
-                pl: sets.pl || 0,
-                bd: sets.bd || 0,
-                hl: sets.hl || 0,
-                mc: sets.mc || 0,
-              },
-              stretchParts: Object.values(stretchParts).filter(Boolean).length,
-              note: document.querySelector("#note")?.value || "",
-            };
-          }
-
-          // === イベントリスナーの設定 ===
-          // チェックボックスのイベントリスナーを設定
-          $$(".set").forEach((ch) => {
-            const key = `set.${ch.dataset.key}`;
-            ch.checked = !!getState()[key];
-            ch.addEventListener("change", (e) => {
-              const s = getState();
-              s[key] = e.target.checked;
-              setState(s);
-              collectSets();
-              updateProgress();
-            });
-          });
-
-          $$(".str").forEach((ch) => {
-            const key = `str.${ch.dataset.key}`;
-            ch.checked = !!getState()[key];
-            ch.addEventListener("change", (e) => {
-              const s = getState();
-              s[key] = e.target.checked;
-              setState(s);
-              collectStretch();
-              updateProgress();
-            });
-          });
-
-          // メイン完了チェックボックス
-          const strengthDoneEl = $("#strengthDone");
-          const stretchDoneEl = $("#stretchDone");
-          const bikeDoneEl = $("#bikeDone");
-
-          if (strengthDoneEl) {
-            strengthDoneEl.checked = !!getState().strengthDone;
-            strengthDoneEl.addEventListener("change", (e) =>
-              mark("strengthDone", e.target.checked)
-            );
-          }
-
-          if (stretchDoneEl) {
-            stretchDoneEl.checked = !!getState().stretchDone;
-            stretchDoneEl.addEventListener("change", (e) =>
-              mark("stretchDone", e.target.checked)
-            );
-          }
-
-          if (bikeDoneEl) {
-            bikeDoneEl.checked = !!getState().bikeDone;
-            bikeDoneEl.addEventListener("change", (e) =>
-              mark("bikeDone", e.target.checked)
-            );
-          }
-
-          // リセットボタン
-          const resetDayBtn = $("#resetDay");
-          if (resetDayBtn) {
-            resetDayBtn.addEventListener("click", () => {
-              if (!confirm("本日の記録をリセットしますか？")) return;
-              localStorage.removeItem(LSKEY(keyBase() + ".state"));
-              // Uncheck all
-              $$(".set, .str").forEach((ch) => (ch.checked = false));
-              if (bikeDoneEl) bikeDoneEl.checked = false;
-              if (strengthDoneEl) strengthDoneEl.checked = false;
-              if (stretchDoneEl) stretchDoneEl.checked = false;
-              updateProgress();
-            });
-          }
-
-          // 初期化
-          collectSets();
-          collectStretch();
-          updateProgress();
-
-          // 日付と挨拶を設定
-          const todayEl = $("#today");
-          if (todayEl) todayEl.textContent = todayStr;
-
-          const hour = new Date().getHours();
-          const greetEl = $("#greet");
-          if (greetEl) {
-            greetEl.textContent =
-              hour < 5
-                ? "早朝セッション"
-                : hour < 12
-                ? "おはようございます"
-                : hour < 18
-                ? "こんにちは"
-                : "こんばんは";
-          }
-
-          // Streak処理
-          const last = localStorage.getItem(LSKEY("lastOpen"));
-          const today = keyBase();
-          if (last !== today) {
             const yKey = new Date(Date.now() - 86400000)
               .toISOString()
               .slice(0, 10);
@@ -1820,19 +1689,25 @@
             );
             const had =
               yState.bikeDone || yState.strengthDone || yState.stretchDone;
+
             let streak = Number(localStorage.getItem(LSKEY("streak")) || "0");
             if (had) {
               streak = streak + 1;
             } else {
               streak = 0;
             }
+
             localStorage.setItem(LSKEY("streak"), String(streak));
             localStorage.setItem(LSKEY("lastOpen"), today);
           }
 
-          // 初回進捗更新
-          updateProgress();
+          // ストリーク表示を更新
+          const streak = Number(localStorage.getItem(LSKEY("streak")) || "0");
+          const streakEl = document.querySelector("#streak");
+          if (streakEl) streakEl.textContent = streak;
         }
+
+        updateStreak();
       })();
     </script>
   </body>
