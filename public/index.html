@@ -340,6 +340,22 @@
           // console.warn('Server upsert failed', e);
         }
       }
+
+      // サーバーの一覧を取得してローカルに反映
+      async function fetchLogsFromServer() {
+        try {
+          const ok = await ensureLogin();
+          if (!ok) return;
+          const res = await fetch("/api/logs");
+          if (!res.ok) throw new Error(`Server error: ${res.status}`);
+          const list = await res.json();
+          // サーバーが真実のソース: ローカルを置き換え
+          setJournal(Array.isArray(list) ? list : []);
+          renderLogTable();
+        } catch (e) {
+          console.warn("Failed to fetch logs from server:", e);
+        }
+      }
     </script>
   </head>
   <body>
@@ -1447,8 +1463,9 @@
           restoreState();
           updateProgress();
 
-          // ログテーブルを表示
+          // ログテーブルを表示（初期はローカルを描画し、その後サーバーから同期）
           renderLogTable();
+          await fetchLogsFromServer();
 
           // 追加ボタンのバインド（JSON import/export）
           const expJ = document.getElementById("exportJson");
@@ -1645,7 +1662,7 @@
           setJournal(list);
         }
 
-        function saveTodaySnapshot(silent = false) {
+        async function saveTodaySnapshot(silent = false) {
           console.log("saveTodaySnapshot called, silent:", silent); // デバッグログ
           try {
             const e = summarizeToday();
@@ -1653,6 +1670,12 @@
             e.date = new Date().toISOString(); // snapshot time
             upsertJournalByDate(e);
             renderLogTable();
+            // サーバーへも保存（成功/失敗はUIを止めない）
+            try {
+              await pushTodayToServer(e);
+              // サーバーを真実とするため再取得して差分を反映
+              await fetchLogsFromServer();
+            } catch {}
             if (!silent) {
               alert("今日のスナップショットを保存しました。");
             }
@@ -1756,14 +1779,27 @@
           }">削除</button>
         </td>
       `;
-            tr.querySelector("button").addEventListener("click", (e) => {
+            tr.querySelector("button").addEventListener("click", async (e) => {
               const key = e.target.dataset.datekey;
               const list = getJournal();
               const idx = list.findIndex((x) => (x.dateKey || "") === key);
               if (idx >= 0 && confirm("この日の記録を削除しますか？")) {
+                // まずローカル更新で即時反映
                 list.splice(idx, 1);
                 setJournal(list);
                 renderLogTable();
+                // サーバーからも削除し、完了後に同期
+                try {
+                  const ok = await ensureLogin();
+                  if (ok) {
+                    await fetch(`/api/logs/${encodeURIComponent(key)}`, {
+                      method: "DELETE",
+                    });
+                    await fetchLogsFromServer();
+                  }
+                } catch (err) {
+                  console.warn("Failed to delete on server:", err);
+                }
               }
             });
             tbody.appendChild(tr);
