@@ -1,0 +1,1775 @@
+<!DOCTYPE html>
+
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width,initial-scale=1" name="viewport" />
+    <title>ブートキャンプ・スターター</title>
+    <meta content="light dark" name="color-scheme" />
+    <style>
+      :root {
+        --bg: #0b1020;
+        --card: #111931cc;
+        --text: #eaf1ff;
+        --muted: #b6c2e1;
+        --accent: #6ee7ff;
+        --ok: #6ee7a0;
+        --warn: #ffd166;
+        --danger: #ff6b6b;
+        --ring: #2b3657;
+        --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+        --radius: 18px;
+      }
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        margin: 0;
+        font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+          "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic UI", "Meiryo",
+          sans-serif;
+        color: var(--text);
+        background: radial-gradient(
+            1200px 600px at 10% -10%,
+            #132042 0%,
+            transparent 60%
+          ),
+          radial-gradient(900px 500px at 110% 20%, #1f2e56 0%, transparent 60%),
+          linear-gradient(160deg, #0a0f1c 0%, #0e1426 100%);
+        background-attachment: fixed;
+      }
+      .wrap {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 24px 16px 80px;
+      }
+      header {
+        display: grid;
+        gap: 14px;
+        align-items: center;
+        grid-template-columns: 1fr auto;
+        margin-bottom: 18px;
+      }
+      .title {
+        font-size: clamp(22px, 3vw, 32px);
+        font-weight: 800;
+        letter-spacing: 0.3px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .chipbar {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .chip {
+        background: linear-gradient(180deg, #1a2344, #131b34);
+        border: 1px solid #26325a;
+        color: #cfe3ff;
+        padding: 8px 12px;
+        border-radius: 999px;
+        font-size: 13px;
+      }
+      .grid {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: repeat(12, 1fr);
+      }
+      .card {
+        grid-column: span 12;
+        background: linear-gradient(180deg, #121a31, #0e162b);
+        backdrop-filter: blur(6px);
+        border: 1px solid #243055;
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        padding: 18px;
+      }
+      @media (min-width: 900px) {
+        .span-7 {
+          grid-column: span 7;
+        }
+        .span-5 {
+          grid-column: span 5;
+        }
+      }
+      h2 {
+        margin: 0 0 8px;
+        font-size: 18px;
+      }
+      .muted {
+        color: var(--muted);
+        font-size: 13px;
+      }
+      .row {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      .kpi {
+        display: flex;
+        gap: 14px;
+        flex-wrap: wrap;
+        margin: 6px 0 12px;
+      }
+      .pill {
+        background: #0b1226;
+        border: 1px solid #243055;
+        border-radius: 12px;
+        padding: 8px 10px;
+        font-size: 13px;
+        color: #dbe6ff;
+      }
+      .progress {
+        width: 100%;
+        height: 12px;
+        border-radius: 999px;
+        background: #0b1328;
+        border: 1px solid #233055;
+        overflow: hidden;
+      }
+      .progress > span {
+        display: block;
+        height: 100%;
+        background: linear-gradient(90deg, #33d1ff, #7af0ff);
+        width: 0%;
+      }
+      .btn {
+        border: none;
+        border-radius: 12px;
+        padding: 10px 14px;
+        font-weight: 700;
+        cursor: pointer;
+        background: linear-gradient(180deg, #27b8ff, #1aa3e6);
+        color: #042032;
+        box-shadow: 0 6px 18px rgba(39, 184, 255, 0.35);
+      }
+      .btn.secondary {
+        background: linear-gradient(180deg, #2a3357, #1a2242);
+        color: #d7e6ff;
+        border: 1px solid #2e3a66;
+        box-shadow: none;
+      }
+      .btn.ghost {
+        background: transparent;
+        border: 1px dashed #2a3968;
+        color: #bcd5ff;
+      }
+      .tag {
+        font-size: 12px;
+        background: #112044;
+        border: 1px solid #26325a;
+        padding: 4px 8px;
+        border-radius: 999px;
+        color: #bfe8ff;
+      }
+      .list {
+        display: grid;
+        gap: 10px;
+        margin-top: 10px;
+      }
+      .ex {
+        display: grid;
+        gap: 10px;
+        grid-template-columns: 1fr auto;
+        align-items: center;
+        padding: 12px;
+        border-radius: 14px;
+        border: 1px solid #223259;
+        background: linear-gradient(180deg, #0f1831, #0c1429);
+      }
+      .ex .meta {
+        font-size: 14px;
+      }
+      .ex .meta b {
+        font-size: 15px;
+      }
+      .ex .steps {
+        font-size: 12px;
+        color: #c6d6ff;
+      }
+      .checkset {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .checkset input {
+        accent-color: #33d1ff;
+        width: 18px;
+        height: 18px;
+      }
+      .timer {
+        display: grid;
+        gap: 10px;
+        grid-template-columns: 1fr auto;
+        align-items: center;
+        margin: 12px 0 4px;
+      }
+      .clock {
+        font-variant-numeric: tabular-nums;
+        font-size: 28px;
+        font-weight: 800;
+        letter-spacing: 0.5px;
+      }
+      .seglist {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .seg {
+        padding: 8px 10px;
+        border-radius: 10px;
+        border: 1px solid #2a3968;
+        background: #0f1937;
+        font-size: 12px;
+        color: #bfe8ff;
+      }
+      .note {
+        font-size: 12px;
+        color: #bcd2ff;
+        margin-top: 8px;
+      }
+      footer {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        align-items: center;
+        padding: 10px;
+        background: linear-gradient(
+          180deg,
+          transparent,
+          rgba(10, 15, 28, 0.85)
+        );
+        backdrop-filter: blur(6px);
+      }
+      .quote {
+        font-style: italic;
+        color: #cfe3ff;
+      }
+      .switch {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+      .switch input {
+        width: 42px;
+        height: 22px;
+      }
+      .small {
+        font-size: 12px;
+      }
+    </style>
+    <script>
+      // --- ログイン状態の確認（リダイレクト対応） ---
+      async function ensureLogin() {
+        const me = await fetch("/api/me")
+          .then((r) => r.json())
+          .catch(() => ({ user: null }));
+
+        if (me.user) {
+          // ユーザー名を表示
+          updateUserDisplay(me.user);
+          return true;
+        }
+
+        // ログインしていない場合はログインページにリダイレクト
+        window.location.href = "/login";
+        return false;
+      }
+
+      // ユーザー表示の更新
+      function updateUserDisplay(username) {
+        // ヘッダーにユーザー名とログアウトボタンを表示
+        const header = document.querySelector("header");
+        if (header && !document.getElementById("user-info")) {
+          const userInfo = document.createElement("div");
+          userInfo.id = "user-info";
+          userInfo.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span style="color: var(--accent); font-weight: 600;">👤 ${username}</span>
+              <button onclick="logout()" style="
+                background: var(--danger); 
+                color: white; 
+                border: none; 
+                padding: 6px 12px; 
+                border-radius: 6px; 
+                cursor: pointer;
+                font-size: 12px;
+              ">ログアウト</button>
+            </div>
+          `;
+          header.appendChild(userInfo);
+        }
+      }
+
+      // ログアウト処理
+      async function logout() {
+        try {
+          await fetch("/api/logout", { method: "POST" });
+          window.location.href = "/login";
+        } catch (error) {
+          console.error("Logout error:", error);
+          window.location.href = "/login";
+        }
+      }
+
+      // サーバーへ「今日のスナップショット」を送る
+      async function pushTodayToServer(entry) {
+        try {
+          const ok = await ensureLogin();
+          if (!ok) return;
+
+          const response = await fetch("/api/logs/upsert", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(entry),
+          });
+
+          if (!response.ok) {
+            throw new Error(`Server error: ${response.status}`);
+          }
+          // console.log('Server upsert OK');
+        } catch (e) {
+          // console.warn('Server upsert failed', e);
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <div class="title">
+          🏁 ブートキャンプ・スターター <span class="muted" id="greet"></span>
+        </div>
+        <div class="chipbar">
+          <span class="chip">今日：<b id="today"></b></span>
+          <span class="chip">目標：有酸素30分＋筋トレ＋ストレッチ</span>
+          <span class="chip">進捗：<b id="progressText">0%</b></span>
+        </div>
+      </header>
+      <div class="card" style="margin-bottom: 12px">
+        <div class="row" style="justify-content: space-between">
+          <div class="row">
+            <span class="tag">RPM 70–80</span>
+            <span class="tag">負荷 40–60%</span>
+            <span class="tag">心拍 120–140（会話OK）</span>
+          </div>
+          <div class="switch">
+            <label class="small"
+              ><input id="hiitToggle" type="checkbox" /> HIITブースト（中盤5分
+              60–70%）</label
+            >
+            <button class="btn secondary" id="resetDay">
+              本日の記録をリセット
+            </button>
+          </div>
+        </div>
+        <div class="progress" style="margin-top: 10px">
+          <span id="progressBar"></span>
+        </div>
+      </div>
+      <div class="grid">
+        <!-- Aerobike -->
+        <section class="card span-7" id="bike">
+          <h2>1. 有酸素（エアロバイク）30分</h2>
+          <div class="muted">
+            ウォームアップ3分 → 中強度22分 → クールダウン5分
+          </div>
+          <div class="timer">
+            <div class="clock" id="clock">00:00</div>
+            <div class="row">
+              <button class="btn" id="start">▶ 開始</button>
+              <button class="btn secondary" id="pause">⏸ 一時停止</button>
+              <button class="btn ghost" id="reset">⟲ リセット</button>
+            </div>
+          </div>
+          <div class="seglist" id="segments"></div>
+          <div class="kpi">
+            <div class="pill">回転数：<b>70–80 rpm</b></div>
+            <div class="pill">負荷：<b>40–60%</b></div>
+            <div class="pill">会話できる強度</div>
+          </div>
+          <label class="small"
+            ><input id="bikeDone" type="checkbox" /> 有酸素30分 完了</label
+          >
+          <div class="note">
+            ヒント：序盤は鼻呼吸＋腹式で心拍を安定。ケイデンス一定を優先し、負荷で微調整。
+          </div>
+        </section>
+        <section class="card span-12" id="bgm">
+          <h2>エアロバイク用BGM</h2>
+          <div class="ex">
+            <div class="meta">
+              <b
+                ><a
+                  href="https://www.youtube.com/watch?v=Hlz_nHElfb4"
+                  style="color: inherit; text-decoration: underline"
+                  target="_blank"
+                  >エクササイズBGM / EDM</a
+                ></b
+              >
+              <div class="steps">
+                エアロバイクやランニングにおすすめのEDMメドレー
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Strength -->
+        <section class="card span-5" id="strength">
+          <h2>2. 筋トレ（フォーム重視）</h2>
+          <div class="list">
+            <div class="ex">
+              <div class="meta">
+                <b
+                  ><a
+                    href="https://www.youtube.com/watch?v=Wjp7V0EK0Zg"
+                    style="color: inherit; text-decoration: underline"
+                    target="_blank"
+                    >2-1. スクワット</a
+                  ></b
+                >
+                <span class="tag">15回 × 2セット</span>
+                <div class="steps">
+                  肩幅・背筋まっすぐ／膝がつま先より前に出ない／太ももが床と平行→かかとで押す
+                </div>
+              </div>
+              <div class="checkset">
+                <label
+                  ><input class="set" data-key="sq-1" type="checkbox" />
+                  1</label
+                >
+                <label
+                  ><input class="set" data-key="sq-2" type="checkbox" />
+                  2</label
+                >
+              </div>
+            </div>
+            <div class="ex">
+              <div class="meta">
+                <b
+                  ><a
+                    href="https://www.youtube.com/watch?v=IdQESpQE9ew"
+                    style="color: inherit; text-decoration: underline"
+                    target="_blank"
+                    >2-2. プッシュアップ</a
+                  ></b
+                >
+                <span class="tag">10–15回 × 2セット</span>
+                <div class="steps">
+                  手幅やや広め／頭〜かかと一直線（膝つき可）／胸を床スレスレまで
+                </div>
+              </div>
+              <div class="checkset">
+                <label
+                  ><input class="set" data-key="pu-1" type="checkbox" />
+                  1</label
+                >
+                <label
+                  ><input class="set" data-key="pu-2" type="checkbox" />
+                  2</label
+                >
+              </div>
+            </div>
+            <div class="ex">
+              <div class="meta">
+                <b
+                  ><a
+                    href="https://www.youtube.com/watch?v=UgkU2S8VUX4"
+                    style="color: inherit; text-decoration: underline"
+                    target="_blank"
+                    >2-3. プランク</a
+                  ></b
+                >
+                <span class="tag">30秒 × 3セット</span>
+                <div class="steps">
+                  肘は肩の真下／頭〜かかと一直線／腹圧で腰を落とさない
+                </div>
+              </div>
+              <div class="checkset">
+                <label
+                  ><input class="set" data-key="pl-1" type="checkbox" />
+                  1</label
+                >
+                <label
+                  ><input class="set" data-key="pl-2" type="checkbox" />
+                  2</label
+                >
+                <label
+                  ><input class="set" data-key="pl-3" type="checkbox" />
+                  3</label
+                >
+                <button class="btn ghost small" id="plank30">
+                  ▶ 30秒タイマー
+                </button>
+              </div>
+            </div>
+            <div class="ex">
+              <div class="meta">
+                <b
+                  ><a
+                    href="https://www.youtube.com/watch?v=FvU7izWY358"
+                    style="color: inherit; text-decoration: underline"
+                    target="_blank"
+                    >2-4. バードドッグ</a
+                  ></b
+                >
+                <span class="tag">左右10回ずつ × 2セット</span>
+                <div class="steps">
+                  四つん這い／反対の手足をまっすぐ／腰高を変えず体幹安定
+                </div>
+              </div>
+              <div class="checkset">
+                <label
+                  ><input class="set" data-key="bd-1" type="checkbox" />
+                  1</label
+                >
+                <label
+                  ><input class="set" data-key="bd-2" type="checkbox" />
+                  2</label
+                >
+              </div>
+            </div>
+            <div class="ex">
+              <div class="meta">
+                <b
+                  ><a
+                    href="https://www.youtube.com/watch?v=FdEmJ3wPC_Y"
+                    style="color: inherit; text-decoration: underline"
+                    target="_blank"
+                    >2-5. ヒップリフト</a
+                  ></b
+                >
+                <span class="tag">15回 × 2セット</span>
+                <div class="steps">
+                  仰向け膝立て／肩〜膝一直線／頂点で1秒止めて下ろす
+                </div>
+              </div>
+              <div class="checkset">
+                <label
+                  ><input class="set" data-key="hl-1" type="checkbox" />
+                  1</label
+                >
+                <label
+                  ><input class="set" data-key="hl-2" type="checkbox" />
+                  2</label
+                >
+              </div>
+            </div>
+            <div class="ex">
+              <div class="meta">
+                <b
+                  ><a
+                    href="https://www.youtube.com/shorts/Nzbrmw71HdY"
+                    style="color: inherit; text-decoration: underline"
+                    target="_blank"
+                    >2-6. マウンテンクライマー</a
+                  ></b
+                >
+                <span class="tag">左右20回ずつ × 2セット</span>
+                <div class="steps">
+                  プッシュアップ姿勢／膝を胸に引き寄せ素早く入替／腰の上下は最小に
+                </div>
+              </div>
+              <div class="checkset">
+                <label
+                  ><input class="set" data-key="mc-1" type="checkbox" />
+                  1</label
+                >
+                <label
+                  ><input class="set" data-key="mc-2" type="checkbox" />
+                  2</label
+                >
+              </div>
+            </div>
+            <label class="small"
+              ><input id="strengthDone" type="checkbox" /> 筋トレ 全メニュー
+              完了</label
+            >
+          </div>
+        </section>
+        <!-- Stretch -->
+        <section class="card span-12" id="stretch">
+          <h2>3. ストレッチ（2〜3分）</h2>
+          <div class="list">
+            <label class="small"
+              ><input class="str" data-key="st-thigh" type="checkbox" />
+              太もも前後</label
+            >
+            <label class="small"
+              ><input class="str" data-key="st-calf" type="checkbox" />
+              ふくらはぎ</label
+            >
+            <label class="small"
+              ><input class="str" data-key="st-shoulder" type="checkbox" />
+              肩・背中</label
+            >
+            <label class="small"
+              ><input class="str" data-key="st-chest" type="checkbox" />
+              胸</label
+            >
+            <div class="note">
+              反動をつけず、深呼吸しながら15–20秒キープを数セット。
+            </div>
+            <label class="small"
+              ><input id="stretchDone" type="checkbox" /> ストレッチ 完了</label
+            >
+          </div>
+        </section>
+        <section class="card span-12" id="journal">
+          <h2>4. 日次ログ（保存・履歴・エクスポート）</h2>
+          <div
+            class="row"
+            style="align-items: stretch; gap: 12px; margin: 8px 0"
+          >
+            <textarea
+              id="note"
+              placeholder="今日のメモ（体調、負荷、気づき等）"
+              style="
+                flex: 1;
+                min-height: 70px;
+                border-radius: 12px;
+                border: 1px solid #223259;
+                background: #0f1831;
+                color: #eaf1ff;
+                padding: 10px;
+              "
+            ></textarea>
+            <div style="display: flex; flex-direction: column; gap: 8px">
+              <button class="btn" id="saveLog">💾 今日の記録を保存</button>
+              <button class="btn secondary" id="exportCsv">
+                📤 CSVエクスポート
+              </button>
+              <button class="btn ghost" id="clearAllLogs">
+                🗑 すべての記録を削除
+              </button>
+            </div>
+          </div>
+          <div class="row" style="gap: 8px; margin: 6px 0 0">
+            <input
+              accept="application/json"
+              id="importJsonFile"
+              style="display: none"
+              type="file"
+            />
+            <button class="btn secondary" id="exportJson">
+              🧰 JSONバックアップ
+            </button>
+            <button class="btn ghost" id="importJson">📥 JSON読み込み</button>
+          </div>
+          <div class="list">
+            <div class="small muted">
+              ※ 保存すると下の履歴に追加されます（ブラウザのローカルに保存）。
+            </div>
+            <div
+              style="
+                overflow: auto;
+                border: 1px solid #223259;
+                border-radius: 12px;
+              "
+            >
+              <table
+                id="logTable"
+                style="width: 100%; border-collapse: collapse; font-size: 13px"
+              >
+                <thead>
+                  <tr style="background: #0b1328">
+                    <th
+                      style="
+                        padding: 8px;
+                        text-align: left;
+                        border-bottom: 1px solid #223259;
+                      "
+                    >
+                      日時
+                    </th>
+                    <th
+                      style="
+                        padding: 8px;
+                        text-align: left;
+                        border-bottom: 1px solid #223259;
+                      "
+                    >
+                      進捗(%)
+                    </th>
+                    <th
+                      style="
+                        padding: 8px;
+                        text-align: left;
+                        border-bottom: 1px solid #223259;
+                      "
+                    >
+                      有酸素
+                    </th>
+                    <th
+                      style="
+                        padding: 8px;
+                        text-align: left;
+                        border-bottom: 1px solid #223259;
+                      "
+                    >
+                      スク
+                    </th>
+                    <th
+                      style="
+                        padding: 8px;
+                        text-align: left;
+                        border-bottom: 1px solid #223259;
+                      "
+                    >
+                      腕立
+                    </th>
+                    <th
+                      style="
+                        padding: 8px;
+                        text-align: left;
+                        border-bottom: 1px solid #223259;
+                      "
+                    >
+                      プラ
+                    </th>
+                    <th
+                      style="
+                        padding: 8px;
+                        text-align: left;
+                        border-bottom: 1px solid #223259;
+                      "
+                    >
+                      BD
+                    </th>
+                    <th
+                      style="
+                        padding: 8px;
+                        text-align: left;
+                        border-bottom: 1px solid #223259;
+                      "
+                    >
+                      HL
+                    </th>
+                    <th
+                      style="
+                        padding: 8px;
+                        text-align: left;
+                        border-bottom: 1px solid #223259;
+                      "
+                    >
+                      MC
+                    </th>
+                    <th
+                      style="
+                        padding: 8px;
+                        text-align: left;
+                        border-bottom: 1px solid #223259;
+                      "
+                    >
+                      ストレッチ
+                    </th>
+                    <th
+                      style="
+                        padding: 8px;
+                        text-align: left;
+                        border-bottom: 1px solid #223259;
+                      "
+                    >
+                      メモ
+                    </th>
+                    <th
+                      style="
+                        padding: 8px;
+                        text-align: left;
+                        border-bottom: 1px solid #223259;
+                      "
+                    >
+                      操作
+                    </th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+    <footer>
+      <span class="quote" id="quote"
+        >「最初の一歩が、いちばん体温を上げる。」</span
+      >
+      <span class="chip" id="dailyBadge"
+        >今日の連続日数：<b id="streak">0</b> 🔥</span
+      >
+    </footer>
+    <script>
+      (function () {
+        // === Utilities ===
+        const $ = (s) => document.querySelector(s);
+        const $$ = (s) => Array.from(document.querySelectorAll(s));
+        const todayStr = new Date().toLocaleDateString("ja-JP", {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+        });
+        const keyBase = () => new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+        const LSKEY = (suffix) => `bootcamp.${suffix}`;
+
+        const elToday = $("#today");
+        elToday.textContent = todayStr;
+        const hour = new Date().getHours();
+        $("#greet").textContent =
+          hour < 5
+            ? "早朝セッション"
+            : hour < 12
+            ? "おはようございます"
+            : hour < 18
+            ? "こんにちは"
+            : "こんばんは";
+
+        // === Quotes ===
+        const quotes = [
+          "小さく始めて、大きく続ける。",
+          "昨日より1mm前へ。",
+          "迷うなら、やってから迷う。",
+          "継続は才能を越える。",
+          "フォームは正義。回数は結果。",
+        ];
+        function rotateQuote() {
+          $("#quote").textContent = `「${
+            quotes[Math.floor(Math.random() * quotes.length)]
+          }」`;
+        }
+        setInterval(rotateQuote, 12000);
+
+        // === Progress ===
+        function getState() {
+          const k = LSKEY(keyBase() + ".state");
+          return JSON.parse(localStorage.getItem(k) || "{}");
+        }
+        function setState(state) {
+          const k = LSKEY(keyBase() + ".state");
+          localStorage.setItem(k, JSON.stringify(state));
+        }
+
+        // セット数の管理
+        function getSets() {
+          const state = getState();
+          return state.sets || {};
+        }
+        function setSets(sets) {
+          const state = getState();
+          state.sets = sets;
+          setState(state);
+        }
+
+        // ストレッチ部位の管理
+        function getStretchParts() {
+          const state = getState();
+          return state.stretchParts || {};
+        }
+        function setStretchParts(parts) {
+          const state = getState();
+          state.stretchParts = parts;
+          setState(state);
+        }
+
+        // ジャーナルの管理
+        function getJournal() {
+          return JSON.parse(localStorage.getItem(LSKEY("journal")) || "[]");
+        }
+        function setJournal(journal) {
+          localStorage.setItem(LSKEY("journal"), JSON.stringify(journal));
+        }
+
+        function mark(name, value) {
+          console.log("mark called with:", name, value); // デバッグログ
+          const s = getState();
+          console.log("Current state before mark:", s); // デバッグログ
+          s[name] = value;
+          setState(s);
+          console.log("State after mark:", s); // デバッグログ
+          updateProgress();
+        }
+
+        function updateProgress() {
+          console.log("updateProgress called"); // デバッグログ
+
+          // Auto-save hook: whenever progress recalculates, schedule snapshot
+          scheduleAutoSave();
+
+          // 1) 状態（localStorage）から取得
+          const s = getState();
+          let bike = !!s.bikeDone;
+          let strength = !!s.strengthDone;
+          let stretch = !!s.stretchDone;
+          let sets = getSets();
+          let stretchParts = getStretchParts();
+
+          // 2) フォールバック：DOMの現在値を優先（イベント未接続でも動く）
+          const bikeEl = document.getElementById("bikeDone");
+          const strEl = document.getElementById("strengthDone");
+          const stEl = document.getElementById("stretchDone");
+          if (bikeEl) bike = bikeEl.checked;
+          if (strEl) strength = strEl.checked;
+          if (stEl) stretch = stEl.checked;
+
+          // セット/ストレッチ部位が未定義なら空扱い
+          if (!sets || typeof sets !== "object") sets = {};
+          if (!stretchParts || typeof stretchParts !== "object")
+            stretchParts = {};
+
+          console.log("State/DOM merged:", {
+            bike,
+            strength,
+            stretch,
+            sets,
+            stretchParts,
+          });
+
+          // メイン項目の完了率 (70%)
+          const big =
+            ((bike ? 1 : 0) + (strength ? 1 : 0) + (stretch ? 1 : 0)) / 3;
+
+          // 詳細項目の完了率 (30%)
+          const setValues = Object.values(sets).filter((v) => Number(v) > 0);
+          const stretchValues = Object.values(stretchParts).filter(
+            (v) => v === true
+          );
+          const microTotal = 13; // 6セット + 7ストレッチ部位
+          const microDone = setValues.length + stretchValues.length;
+          const microRate = microTotal > 0 ? microDone / microTotal : 0;
+
+          const pct = Math.round(100 * (0.7 * big + 0.3 * microRate));
+
+          console.log("Progress calculated:", pct + "%"); // デバッグログ
+
+          const progressBar = $("#progressBar");
+          const progressText = $("#progressText");
+          if (progressBar) progressBar.style.width = pct + "%";
+          if (progressText) progressText.textContent = pct + "%";
+
+          // streak
+          const streak = Number(localStorage.getItem(LSKEY("streak")) || "0");
+          const streakEl = $("#streak");
+          if (streakEl) streakEl.textContent = streak;
+        }
+
+        // === Streak handling ===
+        (function () {
+          const last = localStorage.getItem(LSKEY("lastOpen"));
+          const today = keyBase();
+          if (last !== today) {
+            // new day -> if yesterday had any completion, keep streak; otherwise maybe break.
+            const yKey = new Date(Date.now() - 86400000)
+              .toISOString()
+              .slice(0, 10);
+            const yState = JSON.parse(
+              localStorage.getItem(`bootcamp.${yKey}.state`) || "{}"
+            );
+            const had =
+              yState.bikeDone || yState.strengthDone || yState.stretchDone;
+            let streak = Number(localStorage.getItem(LSKEY("streak")) || "0");
+            if (had) {
+              streak = streak + 1;
+            } else {
+              streak = 0;
+            }
+            localStorage.setItem(LSKEY("streak"), String(streak));
+            localStorage.setItem(LSKEY("lastOpen"), today);
+          }
+        })();
+
+        // === Aerobike Timer ===
+        const segmentsEl = $("#segments");
+        const hiitToggle = $("#hiitToggle");
+
+        function baseSegments() {
+          return [
+            { name: "ウォームアップ", mins: 3, tip: "心拍100–110" },
+            { name: "中強度", mins: 22, tip: "心拍120–140" },
+            { name: "クールダウン", mins: 5, tip: "軽め" },
+          ];
+        }
+        function withHIIT() {
+          return [
+            { name: "ウォームアップ", mins: 3, tip: "心拍100–110" },
+            { name: "中強度", mins: 8, tip: "120–140" },
+            { name: "HIIT", mins: 5, tip: "負荷60–70%" },
+            { name: "中強度", mins: 9, tip: "120–140" },
+            { name: "クールダウン", mins: 5, tip: "軽め" },
+          ];
+        }
+        function renderSegments() {
+          const arr = hiitToggle.checked ? withHIIT() : baseSegments();
+          segmentsEl.innerHTML = "";
+          arr.forEach((seg, i) => {
+            const div = document.createElement("div");
+            div.className = "seg";
+            div.dataset.idx = i;
+            div.innerHTML = `<b>${seg.name}</b>：${seg.mins}分 <span class="muted">(${seg.tip})</span>`;
+            segmentsEl.appendChild(div);
+          });
+        }
+        hiitToggle.addEventListener("change", () => {
+          renderSegments();
+          resetTimer();
+        });
+        renderSegments();
+
+        let timer = null,
+          totalSec = 0,
+          plan = [],
+          cursor = 0,
+          segRemain = 0,
+          running = false;
+
+        function loadPlan() {
+          plan = (hiitToggle.checked ? withHIIT() : baseSegments()).map(
+            (s) => ({ ...s, sec: s.mins * 60 })
+          );
+          totalSec = plan.reduce((a, b) => a + b.sec, 0);
+          cursor = 0;
+          segRemain = plan[0].sec;
+          highlightSeg();
+          $("#clock").textContent = fmt(totalSec);
+        }
+        function fmt(sec) {
+          const m = Math.floor(sec / 60),
+            s = sec % 60;
+          return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+        }
+        function highlightSeg() {
+          $$("#segments .seg").forEach((el, i) => {
+            el.style.borderColor = i === cursor ? "#33d1ff" : "#2a3968";
+            el.style.boxShadow =
+              i === cursor ? "0 0 0 1px #33d1ff inset" : "none";
+          });
+        }
+        function beep() {
+          try {
+            const a = new (window.AudioContext || window.webkitAudioContext)();
+            const o = a.createOscillator(),
+              g = a.createGain();
+            o.type = "sine";
+            o.frequency.value = 880;
+            o.connect(g);
+            g.connect(a.destination);
+            g.gain.setValueAtTime(0.001, a.currentTime);
+            g.gain.exponentialRampToValueAtTime(0.2, a.currentTime + 0.01);
+            o.start();
+            setTimeout(() => {
+              g.gain.exponentialRampToValueAtTime(0.001, a.currentTime + 0.18);
+              o.stop(a.currentTime + 0.2);
+            }, 180);
+          } catch (e) {}
+        }
+        function tick() {
+          if (!running) return;
+          if (totalSec <= 0) {
+            finishBike();
+            return;
+          }
+          totalSec--;
+          segRemain--;
+          $("#clock").textContent = fmt(totalSec);
+          if (segRemain <= 0) {
+            cursor++;
+            if (cursor < plan.length) {
+              segRemain = plan[cursor].sec;
+              highlightSeg();
+              beep();
+            }
+          }
+        }
+        function startTimer() {
+          if (running) return;
+          if (totalSec <= 0) loadPlan();
+          running = true;
+          timer = setInterval(tick, 1000);
+        }
+        function pauseTimer() {
+          running = false;
+          if (timer) clearInterval(timer);
+        }
+        function resetTimer() {
+          pauseTimer();
+          loadPlan();
+        }
+        function finishBike() {
+          pauseTimer();
+          $("#clock").textContent = "完了！";
+          $("#bikeDone").checked = true;
+          mark("bikeDone", true);
+          beep();
+          setTimeout(beep, 220);
+        }
+
+        $("#start").addEventListener("click", startTimer);
+        $("#pause").addEventListener("click", pauseTimer);
+        $("#reset").addEventListener("click", resetTimer);
+        $("#bikeDone").addEventListener("change", (e) =>
+          mark("bikeDone", e.target.checked)
+        );
+        loadPlan();
+
+        // === Plank 30s helper ===
+        $("#plank30").addEventListener("click", () => {
+          const btn = $("#plank30");
+          btn.disabled = true;
+          btn.textContent = "⏳ 30秒";
+          let s = 30;
+          const t = setInterval(() => {
+            s--;
+            btn.textContent = `⏳ ${s}秒`;
+            if (s <= 0) {
+              clearInterval(t);
+              beep();
+              btn.textContent = "▶ 30秒タイマー";
+              btn.disabled = false;
+            }
+          }, 1000);
+        });
+
+        // === Strength / Stretch check handlers ===
+        function collectSets() {
+          const s = getState();
+          const keys = [
+            "sq-1",
+            "sq-2",
+            "pu-1",
+            "pu-2",
+            "pl-1",
+            "pl-2",
+            "pl-3",
+            "bd-1",
+            "bd-2",
+            "hl-1",
+            "hl-2",
+            "mc-1",
+            "mc-2",
+          ];
+          const arr = keys.map((k) => !!s[`set.${k}`]);
+          s.sets = arr;
+          setState(s);
+        }
+        $$(".set").forEach((ch) => {
+          const key = `set.${ch.dataset.key}`;
+          ch.checked = !!getState()[key];
+          ch.addEventListener("change", (e) => {
+            const s = getState();
+            s[key] = e.target.checked;
+            setState(s);
+            collectSets();
+            updateProgress();
+          });
+        });
+        $("#strengthDone").checked = !!getState().strengthDone;
+        $("#strengthDone").addEventListener("change", (e) =>
+          mark("strengthDone", e.target.checked)
+        );
+
+        function collectStretch() {
+          const s = getState();
+          const keys = ["st-thigh", "st-calf", "st-shoulder", "st-chest"];
+          s.stretchParts = keys.map((k) => !!s[`str.${k}`]);
+          setState(s);
+        }
+        $$(".str").forEach((ch) => {
+          const key = `str.${ch.dataset.key}`;
+          ch.checked = !!getState()[key];
+          ch.addEventListener("change", (e) => {
+            const s = getState();
+            s[key] = e.target.checked;
+            setState(s);
+            collectStretch();
+            updateProgress();
+          });
+        });
+        $("#stretchDone").checked = !!getState().stretchDone;
+        $("#stretchDone").addEventListener("change", (e) =>
+          mark("stretchDone", e.target.checked)
+        );
+
+        collectSets();
+        collectStretch();
+        updateProgress();
+
+        // === Reset today ===
+        $("#resetDay").addEventListener("click", () => {
+          if (!confirm("本日の記録をリセットしますか？")) return;
+          localStorage.removeItem(LSKEY(keyBase() + ".state"));
+          // Uncheck all
+          $$(".set, .str").forEach((ch) => (ch.checked = false));
+          $("#bikeDone").checked = false;
+          $("#strengthDone").checked = false;
+          $("#stretchDone").checked = false;
+          updateProgress();
+        });
+
+        // === Journal (Daily Logs) ===
+        function LS_JOURNAL_KEY() {
+          return LSKEY("journal");
+        }
+
+        function getJournal() {
+          return JSON.parse(localStorage.getItem(LS_JOURNAL_KEY()) || "[]");
+        }
+        function setJournal(arr) {
+          localStorage.setItem(LS_JOURNAL_KEY(), JSON.stringify(arr));
+        }
+
+        function progressValue() {
+          // Recalculate using the same logic as updateProgress()
+          const s = getState();
+          const sets = getSets();
+          const stretchParts = getStretchParts();
+
+          // メイン項目の完了率 (70%)
+          const big =
+            ((s.bikeDone ? 1 : 0) +
+              (s.strengthDone ? 1 : 0) +
+              (s.stretchDone ? 1 : 0)) /
+            3;
+
+          // 詳細項目の完了率 (30%)
+          const setValues = Object.values(sets).filter((v) => v > 0);
+          const stretchValues = Object.values(stretchParts).filter(
+            (v) => v === true
+          );
+          const microTotal = 13; // 6セット + 7ストレッチ部位
+          const microDone = setValues.length + stretchValues.length;
+          const microRate = microTotal > 0 ? microDone / microTotal : 0;
+
+          return Math.round(100 * (0.7 * big + 0.3 * microRate));
+        }
+
+        function summarizeSets() {
+          const s = getState();
+          const m = {
+            sq: (s.sets || []).slice(0, 2), // sq-1, sq-2
+            pu: (s.sets || []).slice(2, 4), // pu-1, pu-2
+            pl: (s.sets || []).slice(4, 7), // pl-1..3
+            bd: (s.sets || []).slice(7, 9), // bd-1..2
+            hl: (s.sets || []).slice(9, 11), // hl-1..2
+            mc: (s.sets || []).slice(11, 13), // mc-1..2
+          };
+          const sum = (arr) => arr.reduce((a, b) => a + (b ? 1 : 0), 0);
+          return {
+            sq: sum(m.sq),
+            pu: sum(m.pu),
+            pl: sum(m.pl),
+            bd: sum(m.bd),
+            hl: sum(m.hl),
+            mc: sum(m.mc),
+          };
+        }
+
+        function summarizeToday() {
+          const s = getState();
+          const sets = getSets();
+          const stretchParts = getStretchParts();
+
+          return {
+            date: new Date().toISOString(),
+            dateKey: keyBase(),
+            progress: progressValue(),
+            bikeDone: !!s.bikeDone,
+            strengthDone: !!s.strengthDone,
+            stretchDone: !!s.stretchDone,
+            hiit: !!document.querySelector("#hiitToggle")?.checked,
+            sets: {
+              sq: sets.sq || 0,
+              pu: sets.pu || 0,
+              pl: sets.pl || 0,
+              bd: sets.bd || 0,
+              hl: sets.hl || 0,
+              mc: sets.mc || 0,
+            },
+            stretchParts: Object.values(stretchParts).filter(Boolean).length,
+            note: document.querySelector("#note")?.value || "",
+          };
+        }
+
+        function renderLogTable() {
+          const tbody = document.querySelector("#logTable tbody");
+          if (!tbody) return;
+          tbody.innerHTML = "";
+
+          const logs = (getJournal() || []).slice().sort((a, b) => {
+            // dateKey desc, fallback to date
+            const ak = a.dateKey || (a.date ? a.date.slice(0, 10) : "");
+            const bk = b.dateKey || (b.date ? b.date.slice(0, 10) : "");
+            if (ak === bk) return (b.date || "").localeCompare(a.date || "");
+            return bk.localeCompare(ak);
+          });
+
+          if (logs.length === 0) {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `<td colspan="12" style="padding:10px; color:#9fb2d9;">まだ記録がありません。右の「今日の記録を保存」を押すとここに表示されます。</td>`;
+            tbody.appendChild(tr);
+            return;
+          }
+
+          logs.forEach((lg) => {
+            const tr = document.createElement("tr");
+            tr.style.borderBottom = "1px solid #223259";
+            const dt = new Date(lg.date || `${lg.dateKey}T00:00:00`);
+            const dtStr = isNaN(dt.getTime())
+              ? lg.dateKey || "-"
+              : dt.toLocaleString("ja-JP", {
+                  year: "numeric",
+                  month: "2-digit",
+                  day: "2-digit",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                });
+            tr.innerHTML = `
+              <td style="padding:8px;">${dtStr}</td>
+              <td style="padding:8px;">${lg.progress ?? "-"}</td>
+              <td style="padding:8px;">${
+                lg.bikeDone ? (lg.hiit ? "有酸素+HIIT" : "有酸素") : "-"
+              }</td>
+              <td style="padding:8px;">${lg.sets?.sq ?? 0}</td>
+              <td style="padding:8px;">${lg.sets?.pu ?? 0}</td>
+              <td style="padding:8px;">${lg.sets?.pl ?? 0}</td>
+              <td style="padding:8px;">${lg.sets?.bd ?? 0}</td>
+              <td style="padding:8px;">${lg.sets?.hl ?? 0}</td>
+              <td style="padding:8px;">${lg.sets?.mc ?? 0}</td>
+              <td style="padding:8px;">${lg.stretchDone ? "✔" : "-"}</td>
+              <td style="padding:8px; max-width:320px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${(
+                lg.note || ""
+              ).replace(/"/g, "&quot;")}">${lg.note || ""}</td>
+              <td style="padding:8px;"><button class="btn ghost small" data-datekey="${
+                lg.dateKey
+              }">削除</button></td>
+            `;
+            tr.querySelector("button").addEventListener("click", (e) => {
+              const key = e.target.dataset.datekey;
+              const list = getJournal();
+              const idx = list.findIndex((x) => (x.dateKey || "") === key);
+              if (idx >= 0 && confirm("この日の記録を削除しますか？")) {
+                list.splice(idx, 1);
+                setJournal(list);
+                renderLogTable();
+              }
+            });
+            tbody.appendChild(tr);
+          });
+        }
+
+        function saveTodayLogDeprecated_DO_NOT_USE() {
+          const entry = summarizeToday();
+          const logs = getJournal();
+          logs.push(entry);
+          setJournal(logs);
+          renderLogTable();
+          alert("今日の記録を保存しました。");
+        }
+
+        function exportCsv() {
+          const logs = getJournal();
+          const header = [
+            "datetime",
+            "dateKey",
+            "progress",
+            "bikeDone",
+            "hiit",
+            "strengthDone",
+            "stretchDone",
+            "sq_sets",
+            "pu_sets",
+            "pl_sets",
+            "bd_sets",
+            "hl_sets",
+            "mc_sets",
+            "stretchParts",
+            "note",
+          ];
+          const rows = logs.map((lg) => [
+            lg.date,
+            lg.dateKey,
+            lg.progress,
+            lg.bikeDone,
+            lg.hiit,
+            lg.strengthDone,
+            lg.stretchDone,
+            lg.sets?.sq ?? 0,
+            lg.sets?.pu ?? 0,
+            lg.sets?.pl ?? 0,
+            lg.sets?.bd ?? 0,
+            lg.sets?.hl ?? 0,
+            lg.sets?.mc ?? 0,
+            lg.stretchParts ?? 0,
+            (lg.note || "").replace(/\r?\n/g, " "),
+          ]);
+          const csv = [header.join(","), ...rows.map((r) => r.join(","))].join(
+            "\\n"
+          );
+          const blob = new Blob([csv], { type: "text/csv" });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `bootcamp_journal_${keyBase()}.csv`;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          URL.revokeObjectURL(url);
+        }
+
+        function clearAllLogs() {
+          if (!confirm("すべての記録を削除します。よろしいですか？")) return;
+          setJournal([]);
+          renderLogTable();
+        }
+
+        // Bind buttons after DOM ready
+        window.addEventListener("DOMContentLoaded", async () => {
+          console.log("DOM loaded, initializing..."); // デバッグログ
+
+          // ログイン状態を確認
+          await ensureLogin();
+
+          // 今日の日付を表示
+          initializeToday();
+
+          // プログレスバーのテスト
+          testProgressBar();
+
+          // 基本的なイベントリスナーを設定
+          setupEventListeners();
+
+          // 進捗状態を復元・更新
+          restoreState();
+          updateProgress();
+
+          // ログテーブルを表示
+          renderLogTable();
+
+          // 追加ボタンのバインド（JSON import/export）
+          const expJ = document.getElementById("exportJson");
+          const impJ = document.getElementById("importJson");
+          const file = document.getElementById("importJsonFile");
+          if (expJ) expJ.addEventListener("click", exportJson);
+          if (impJ) impJ.addEventListener("click", () => file && file.click());
+          if (file)
+            file.addEventListener("change", (e) => {
+              if (e.target.files && e.target.files[0])
+                importJson(e.target.files[0]);
+            });
+        });
+
+        // プログレスバーのテスト関数
+        function testProgressBar() {
+          console.log("Testing progress bar..."); // デバッグログ
+          const progressBar = document.getElementById("progressBar");
+          const progressText = document.getElementById("progressText");
+
+          if (progressBar) {
+            console.log("ProgressBar found, setting test width"); // デバッグログ
+            progressBar.style.width = "50%";
+            progressBar.style.backgroundColor = "#33d1ff"; // 色を確実に設定
+          } else {
+            console.error("ProgressBar element not found!"); // エラーログ
+          }
+
+          if (progressText) {
+            console.log("ProgressText found, setting test text"); // デバッグログ
+            progressText.textContent = "50%";
+          } else {
+            console.error("ProgressText element not found!"); // エラーログ
+          }
+
+          // 3秒後に実際のupdateProgressを呼ぶ
+          setTimeout(() => {
+            console.log("Calling updateProgress after test...");
+            updateProgress();
+          }, 3000);
+        }
+
+        // デバッグ用：手動でプログレスを変更する関数（ブラウザコンソールで使用可能）
+        window.setTestProgress = function (percent) {
+          const progressBar = document.getElementById("progressBar");
+          const progressText = document.getElementById("progressText");
+          if (progressBar) progressBar.style.width = percent + "%";
+          if (progressText) progressText.textContent = percent + "%";
+          console.log("Manual progress set to:", percent + "%");
+        }; // 今日の日付を表示
+        function initializeToday() {
+          const today = new Date();
+          const todayStr = today.toLocaleDateString("ja-JP", {
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            weekday: "short",
+          });
+          const todayElement = document.getElementById("today");
+          if (todayElement) {
+            todayElement.textContent = todayStr;
+          }
+        }
+
+        // 基本的なイベントリスナーを設定
+        function setupEventListeners() {
+          console.log("Setting up event listeners..."); // デバッグログ
+
+          // 保存・エクスポート・クリアボタン
+          const saveBtn = document.getElementById("saveLog");
+          const expBtn = document.getElementById("exportCsv");
+          const clrBtn = document.getElementById("clearAllLogs");
+
+          console.log("Buttons found:", { saveBtn, expBtn, clrBtn }); // デバッグログ
+
+          if (saveBtn)
+            saveBtn.addEventListener("click", () => {
+              console.log("Save button clicked"); // デバッグログ
+              saveTodaySnapshot(false);
+            });
+          if (expBtn)
+            expBtn.addEventListener("click", () => {
+              console.log("Export button clicked"); // デバッグログ
+              exportCsv();
+            });
+          if (clrBtn)
+            clrBtn.addEventListener("click", () => {
+              console.log("Clear button clicked"); // デバッグログ
+              clearAllLogs();
+            });
+
+          // チェックボックスのイベントリスナー
+          const bikeDone = document.getElementById("bikeDone");
+          const strengthDone = document.getElementById("strengthDone");
+          const stretchDone = document.getElementById("stretchDone");
+
+          console.log("Checkboxes found:", {
+            bikeDone,
+            strengthDone,
+            stretchDone,
+          }); // デバッグログ
+
+          if (bikeDone)
+            bikeDone.addEventListener("change", () => {
+              console.log("Bike checkbox changed:", bikeDone.checked); // デバッグログ
+              mark("bikeDone", bikeDone.checked);
+            });
+          if (strengthDone)
+            strengthDone.addEventListener("change", () => {
+              console.log("Strength checkbox changed:", strengthDone.checked); // デバッグログ
+              mark("strengthDone", strengthDone.checked);
+            });
+          if (stretchDone)
+            stretchDone.addEventListener("change", () => {
+              console.log("Stretch checkbox changed:", stretchDone.checked); // デバッグログ
+              mark("stretchDone", stretchDone.checked);
+            });
+
+          // セット数入力のイベントリスナー
+          ["sq", "pu", "pl", "bd", "hl", "mc"].forEach((name) => {
+            const input = document.getElementById(name);
+            if (input) {
+              input.addEventListener("input", () => {
+                const sets = getSets();
+                sets[name] = parseInt(input.value) || 0;
+                setSets(sets);
+                updateProgress();
+              });
+            }
+          });
+
+          // ストレッチ部位のチェックボックス
+          ["neck", "shoulder", "chest", "back", "hip", "thigh", "calf"].forEach(
+            (name) => {
+              const checkbox = document.getElementById(name);
+              if (checkbox) {
+                checkbox.addEventListener("change", () => {
+                  const parts = getStretchParts();
+                  parts[name] = checkbox.checked;
+                  setStretchParts(parts);
+                  updateProgress();
+                });
+              }
+            }
+          );
+        }
+
+        // 状態を復元
+        function restoreState() {
+          const state = getState();
+
+          // チェックボックスの状態を復元
+          const bikeDone = document.getElementById("bikeDone");
+          const strengthDone = document.getElementById("strengthDone");
+          const stretchDone = document.getElementById("stretchDone");
+
+          if (bikeDone) bikeDone.checked = state.bikeDone || false;
+          if (strengthDone) strengthDone.checked = state.strengthDone || false;
+          if (stretchDone) stretchDone.checked = state.stretchDone || false;
+
+          // セット数を復元
+          const sets = getSets();
+          ["sq", "pu", "pl", "bd", "hl", "mc"].forEach((name) => {
+            const input = document.getElementById(name);
+            if (input) {
+              input.value = sets[name] || 0;
+            }
+          });
+
+          // ストレッチ部位を復元
+          const parts = getStretchParts();
+          ["neck", "shoulder", "chest", "back", "hip", "thigh", "calf"].forEach(
+            (name) => {
+              const checkbox = document.getElementById(name);
+              if (checkbox) {
+                checkbox.checked = parts[name] || false;
+              }
+            }
+          );
+        }
+
+        // === Simple daily auto-save (one snapshot per date) ===
+        var __autoSaveTimer = null; // varにしてTDZを回避
+        function debounceSave(fn, delay = 800) {
+          if (__autoSaveTimer) clearTimeout(__autoSaveTimer);
+          __autoSaveTimer = setTimeout(fn, delay);
+        }
+
+        function upsertJournalByDate(entry) {
+          const list = getJournal();
+          const idx = list.findIndex((x) => x.dateKey === entry.dateKey);
+          if (idx >= 0) list[idx] = entry;
+          else list.push(entry);
+          setJournal(list);
+        }
+
+        function saveTodaySnapshot(silent = false) {
+          console.log("saveTodaySnapshot called, silent:", silent); // デバッグログ
+          try {
+            const e = summarizeToday();
+            console.log("Snapshot data:", e); // デバッグログ
+            e.date = new Date().toISOString(); // snapshot time
+            upsertJournalByDate(e);
+            renderLogTable();
+            if (!silent) {
+              alert("今日のスナップショットを保存しました。");
+            }
+            console.log("Snapshot saved successfully"); // デバッグログ
+          } catch (error) {
+            console.error("Error saving snapshot:", error); // エラーログ
+          }
+        }
+
+        function scheduleAutoSave() {
+          debounceSave(() => {
+            const e = summarizeToday();
+            e.date = new Date().toISOString();
+            upsertJournalByDate(e);
+            renderLogTable();
+            pushTodayToServer(e);
+          }, 800);
+        }
+
+        // 既存のupdateProgressの末尾で自動保存を呼ぶ
+
+        function exportJson() {
+          const data = getJournal();
+          const blob = new Blob([JSON.stringify(data, null, 2)], {
+            type: "application/json",
+          });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = "bootcamp_journal_backup.json";
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          URL.revokeObjectURL(url);
+        }
+
+        function importJson(file) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            try {
+              const parsed = JSON.parse(e.target.result);
+              if (!Array.isArray(parsed)) throw new Error("Invalid format");
+              setJournal(parsed);
+              renderLogTable();
+              alert("JSONを読み込みました。");
+            } catch (err) {
+              alert("読み込みに失敗しました: " + err.message);
+            }
+          };
+          reader.readAsText(file, "utf-8");
+        }
+
+        // renderLogTable の重複（同じdateKeyが複数ある場合）の整理
+        const _orig_render = renderLogTable;
+        renderLogTable = function () {
+          const tbody = document.querySelector("#logTable tbody");
+          if (!tbody) return;
+          tbody.innerHTML = "";
+          // 同じdateKeyのうち最新のdateを採用
+          const map = new Map();
+          getJournal().forEach((lg) => {
+            const key = lg.dateKey || (lg.date || "").slice(0, 10);
+            const cur = map.get(key);
+            if (!cur || new Date(lg.date) > new Date(cur.date))
+              map.set(key, { ...lg, dateKey: key });
+          });
+          const rows = Array.from(map.values()).sort((a, b) =>
+            a.dateKey < b.dateKey ? 1 : -1
+          ); // desc by dateKey
+
+          rows.forEach((lg) => {
+            const tr = document.createElement("tr");
+            tr.style.borderBottom = "1px solid #223259";
+            const dt = new Date(lg.date || lg.dateKey + "T00:00:00Z");
+            const dtStr = dt.toLocaleString("ja-JP", {
+              year: "numeric",
+              month: "2-digit",
+              day: "2-digit",
+              hour: "2-digit",
+              minute: "2-digit",
+            });
+            tr.innerHTML = `
+        <td style="padding:8px;">${dtStr}</td>
+        <td style="padding:8px;">${lg.progress ?? "-"}</td>
+        <td style="padding:8px;">${
+          lg.bikeDone ? (lg.hiit ? "有酸素+HIIT" : "有酸素") : "-"
+        }</td>
+        <td style="padding:8px;">${lg.sets?.sq ?? 0}</td>
+        <td style="padding:8px;">${lg.sets?.pu ?? 0}</td>
+        <td style="padding:8px;">${lg.sets?.pl ?? 0}</td>
+        <td style="padding:8px;">${lg.sets?.bd ?? 0}</td>
+        <td style="padding:8px;">${lg.sets?.hl ?? 0}</td>
+        <td style="padding:8px;">${lg.sets?.mc ?? 0}</td>
+        <td style="padding:8px;">${lg.stretchDone ? "✔" : "-"}</td>
+        <td style="padding:8px; max-width:320px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${(
+          lg.note || ""
+        ).replace(/"/g, "&quot;")}">${lg.note || ""}</td>
+        <td style="padding:8px;">
+          <button class="btn ghost small" data-datekey="${
+            lg.dateKey
+          }">削除</button>
+        </td>
+      `;
+            tr.querySelector("button").addEventListener("click", (e) => {
+              const key = e.target.dataset.datekey;
+              const list = getJournal();
+              const idx = list.findIndex((x) => (x.dateKey || "") === key);
+              if (idx >= 0 && confirm("この日の記録を削除しますか？")) {
+                list.splice(idx, 1);
+                setJournal(list);
+                renderLogTable();
+              }
+            });
+            tbody.appendChild(tr);
+          });
+        };
+      })();
+    </script>
+  </body>
+</html>
