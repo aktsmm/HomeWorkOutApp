@@ -6,6 +6,24 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import os from "node:os";
 import Database from "better-sqlite3";
+// 日次ログ保存ユーティリティ関数
+function saveDailyLog(username, action, details = {}) {
+  const dateKey = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+  const dateIso = new Date().toISOString();
+  const payload = JSON.stringify({
+    dateKey,
+    date: dateIso,
+    action,
+    details,
+  });
+  db.prepare(
+    `INSERT INTO logs(username, dateKey, dateIso, payload)
+     VALUES (?, ?, ?, ?)
+     ON CONFLICT(username, dateKey) DO UPDATE SET
+       dateIso=excluded.dateIso,
+       payload=excluded.payload`
+  ).run(username, dateKey, dateIso, payload);
+}
 
 dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
@@ -111,6 +129,8 @@ app.post("/api/register", async (req, res) => {
     req.session.user = { name: uname };
     res.json({ ok: true, user: uname });
     console.log(`[REGISTER] New user created: "${uname}"`);
+    // ユーザー登録時に日次ログ保存
+    saveDailyLog(uname, "register", { ip: req.ip });
   } catch (error) {
     console.error("[REGISTER] Error:", error);
     res.status(500).json({ error: "登録に失敗しました" });
@@ -140,6 +160,8 @@ app.post("/api/login", async (req, res) => {
   req.session.user = { name: uname };
   res.json({ ok: true, user: uname });
   console.log(`[LOGIN] User logged in: "${uname}"`);
+  // ログイン時に日次ログ保存
+  saveDailyLog(uname, "login", { ip: req.ip });
 });
 
 app.post("/api/logout", (req, res) => {
@@ -155,9 +177,12 @@ app.get("/api/me", (req, res) => {
 app.post("/api/logs/upsert", requireAuth, (req, res) => {
   const username = req.session.user.name;
   const entry = req.body || {};
-  // { dateKey, date, progress, bikeDone, strengthDone, stretchDone, hiit, sets:{...}, stretchParts, note }
+  // { dateKey, date, progress, ... }
   if (!entry.dateKey)
     return res.status(400).json({ error: "dateKey is required" });
+
+  // progress値が未定義なら0で補完
+  if (typeof entry.progress === "undefined") entry.progress = 0;
 
   const payload = JSON.stringify(entry);
   const dateIso = entry.date || new Date().toISOString();
@@ -175,7 +200,7 @@ app.post("/api/logs/upsert", requireAuth, (req, res) => {
   // デバッグ: だれが何日付で保存したか
   try {
     console.log(
-      `[LOGS] Upsert by user="${username}" date="${entry.dateKey}" bytes=${payload.length}`
+      `[LOGS] Upsert by user="${username}" date="${entry.dateKey}" progress=${entry.progress} bytes=${payload.length}`
     );
   } catch {}
 
@@ -188,7 +213,12 @@ app.get("/api/logs", requireAuth, (req, res) => {
   const rows = db
     .prepare("SELECT payload FROM logs WHERE username=? ORDER BY dateKey DESC")
     .all(username);
-  const list = rows.map((r) => JSON.parse(r.payload));
+  // progress値が必ず含まれるように補完
+  const list = rows.map((r) => {
+    const obj = JSON.parse(r.payload);
+    if (typeof obj.progress === "undefined") obj.progress = 0;
+    return obj;
+  });
   res.json(list);
 });
 
@@ -210,6 +240,28 @@ app.delete("/api/logs/:dateKey", requireAuth, (req, res) => {
     req.params.dateKey
   );
   res.json({ ok: true });
+});
+
+// CSVエクスポートAPI
+app.get("/api/logs/export", requireAuth, (req, res) => {
+  const username = req.session.user.name;
+  const rows = db
+    .prepare(
+      "SELECT dateKey, dateIso, payload FROM logs WHERE username=? ORDER BY dateKey DESC"
+    )
+    .all(username);
+
+  // CSVヘッダー
+  let csv = "dateKey,dateIso,action,details\n";
+  for (const row of rows) {
+    const payload = JSON.parse(row.payload);
+    csv += `"${row.dateKey}","${row.dateIso}","${
+      payload.action || ""
+    }","${JSON.stringify(payload.details || {})}"\n`;
+  }
+  res.header("Content-Type", "text/csv");
+  res.attachment("logs.csv");
+  res.send(csv);
 });
 
 // ---- Static (フロント) ----
