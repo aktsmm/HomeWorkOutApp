@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import bcrypt from "bcrypt"; // ここでは平文比較でもOKだが将来拡張用に
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import os from "node:os";
 import Database from "better-sqlite3";
 
 dotenv.config();
@@ -222,30 +223,63 @@ app.use(express.static(path.join(__dirname, "public")));
 //-> IPv6 未指定（環境により挙動が異なるため注意）    HOST=::
 const HOST = process.env.HOST; // 未設定(undefined)なら host 省略で listen
 
+// ---- 起動時のアクセス先を分かりやすく出力するヘルパー ----
+function formatUrl(address, port, family) {
+  // IPv6 アドレスは URL 内で [] で囲む必要がある
+  const host = family === "IPv6" ? `[${address}]` : address;
+  return `http://${host}:${port}`;
+}
+
+function logAccessHints(server, port) {
+  // 実際にバインドされたソケット情報
+  const addr = server.address();
+  if (typeof addr === "string") {
+    console.log(`[BOOT] Server listening on pipe ${addr}`);
+  } else {
+    console.log(
+      `[BOOT] Server bound to ${addr.address} (${addr.family}) port ${addr.port}`
+    );
+    console.log(
+      `[BOOT] URL: ${formatUrl(addr.address, addr.port, addr.family)}`
+    );
+  }
+
+  // ローカルNICのIPv4/IPv6アドレスを列挙して、試せるURLを提示
+  const ifaces = os.networkInterfaces();
+  const v4Urls = [];
+  const v6Urls = [];
+  for (const [name, list] of Object.entries(ifaces)) {
+    for (const a of list || []) {
+      // internal(true)はループバック等なので除外（localhost/127.0.0.1 は別途表示）
+      if (a.internal) continue;
+      if (a.family === "IPv4") {
+        v4Urls.push(`- ${name} IPv4: http://${a.address}:${port}`);
+      } else if (a.family === "IPv6") {
+        v6Urls.push(`- ${name} IPv6: http://[${a.address}]:${port}`);
+      }
+    }
+  }
+
+  console.log("[ACCESS] Local URLs you can try:");
+  console.log(`- localhost: http://localhost:${port}`);
+  console.log(`- loopback v4: http://127.0.0.1:${port}`);
+  // IPv4/IPv6 の順に表示
+  v4Urls.forEach((u) => console.log(u));
+  v6Urls.forEach((u) => console.log(u));
+}
+
 // 実バインド情報をログするため、server を受け取る
 let server;
 if (HOST) {
   // ホスト指定あり
   server = app.listen(PORT, HOST, () => {
-    const addr = server.address();
-    if (typeof addr === "string") {
-      console.log(`[BOOT] Server listening on pipe ${addr}`);
-    } else {
-      console.log(
-        `[BOOT] Server listening http://${addr.address}:${addr.port} (${addr.family})`
-      );
-    }
+    // 起動時の接続先ヒントを出力
+    logAccessHints(server, PORT);
   });
 } else {
   // ホスト未指定（Node のデフォルト: 未指定アドレスにバインド）
   server = app.listen(PORT, () => {
-    const addr = server.address();
-    if (typeof addr === "string") {
-      console.log(`[BOOT] Server listening on pipe ${addr}`);
-    } else {
-      console.log(
-        `[BOOT] Server listening http://${addr.address}:${addr.port} (${addr.family})`
-      );
-    }
+    // 起動時の接続先ヒントを出力
+    logAccessHints(server, PORT);
   });
 }
