@@ -1,14 +1,61 @@
-# 🏋️ HomeWorkOutApp - 筋力トレーニング記録アプリ
+# 🏋️ HomeWorkOutApp - 筋トレ記録アプリ
 
-このアプリは、あなたの筋力トレーニングを記録・管理する Web アプリケーションです。 在宅ワーカー向けなので LAN 内で Web サーバを立てるために作りました。
+このアプリは、あなたの筋トレを記録・管理する Web アプリケーションです。 在宅ワーカー向けなので LAN 内で Web サーバを立てるために作りました。
 Node.js（JavaScript）で作られており、データベースには SQLite を使用しています。
 
 ## 📋 このアプリでできること
 
-- 💪 筋力トレーニングの記録（種目、セット数、回数、重量など）
-- 📊 過去のトレーニング履歴の確認
-- 🔐 ユーザー認証機能（ログイン・ログアウト）
-- 📈 トレーニングの進捗管理
+- � ユーザー管理
+
+  - 新規登録/ログイン/ログアウト
+  - セッションベースの認証（express-session、Cookie SameSite=Lax）
+
+- �💪 日次サマリの記録・更新（Upsert）
+
+  - 1 日単位でトレーニング結果を保存します（同日データは上書き更新）
+  - 保存できる主な項目（例）:
+    - dateKey: その日のキー（YYYY-MM-DD）
+    - progress: 進捗メモや気づき
+    - bikeDone: 有酸素（バイク）実施有無
+    - strengthDone: 筋トレ実施有無
+    - hiit: HIIT 実施有無
+    - sets: 種目ごとのセット詳細（任意の種目名で、回数/重量などを自由に保持）
+    - stretchDone: ストレッチ実施有無
+    - stretchParts: 伸ばした部位のメモ
+    - note: 自由記述メモ
+
+  送受信データのイメージ:
+
+  ```json
+  {
+    "dateKey": "2025-08-12",
+    "date": "2025-08-12T07:30:00.000Z",
+    "progress": "胸の日。重量キープ。",
+    "bikeDone": true,
+    "strengthDone": true,
+    "stretchDone": true,
+    "hiit": false,
+    "sets": {
+      "benchPress": [
+        { "set": 1, "reps": 10, "weight": 40 },
+        { "set": 2, "reps": 8, "weight": 45 },
+        { "set": 3, "reps": 6, "weight": 50 }
+      ],
+      "fly": [{ "set": 1, "reps": 12, "weight": 10 }]
+    },
+    "stretchParts": ["胸", "肩"],
+    "note": "フォーム意識。"
+  }
+  ```
+
+- 📊 履歴の参照・検索
+
+  - 一覧取得（新しい日付順）
+  - 単日取得 / 単日削除
+
+- �️ データ格納
+  - ローカル SQLite（db.sqlite）に保存。バックアップ/持ち運びが容易
+  - ユーザーごとにデータを分離（users / logs テーブル）
 
 ## 🚀 はじめ方（初心者向け）
 
@@ -22,17 +69,19 @@ Node.js（JavaScript）で作られており、データベースには SQLite �
 
    - [Node.js 公式サイト](https://nodejs.org/)からダウンロード
    - インストール後、コマンドでバージョンを確認：
+
      ```powershell
      node -v
      npm -v
      ```
+
    - 両方ともバージョンが表示されれば OK
 
    nvm（Windows 用 Node バージョン管理）を使うと安全です：
 
    - nvm-windows のインストール（未導入の場合）
 
-     - 公式: https://github.com/coreybutler/nvm-windows
+     - 公式: <https://github.com/coreybutler/nvm-windows>
      - winget 例：
 
        ```powershell
@@ -45,7 +94,7 @@ Node.js（JavaScript）で作られており、データベースには SQLite �
        node -v   # v20.x を確認
        ```
 
-2. **Git**（ソースコードのダウンロード用）
+1. **Git**（ソースコードのダウンロード用）
    - [Git 公式サイト](https://git-scm.com/)からダウンロード
 
 ---
@@ -84,6 +133,31 @@ Copy-Item .env.example .env
 
 必要に応じて`.env`を編集してください。
 
+#### 初期ユーザー（デフォルトアカウント）
+
+- 初回起動時、指定ユーザーが存在しない場合は自動作成されます。
+- 既定値（デモ用）
+
+  ```properties
+  ADMIN_USER=admin
+  ADMIN_PASS=password
+  SESSION_SECRET=dev_secret
+  ```
+
+- 本番/共有環境では、必ず .env で上書きしてください。
+
+  ```properties
+  # 例: 強いパスワードとランダムなセッションキーに変更
+  ADMIN_USER=your_name
+  ADMIN_PASS=use-a-strong-password-here
+  SESSION_SECRET=change-this-to-a-long-random-string
+
+  # ポート/ホストの指定（任意）
+  APP_PORT=3000
+  # ローカルのみ: 127.0.0.1 / 全IF: 0.0.0.0 / IPv6: ::
+  HOST=127.0.0.1
+  ```
+
 ---
 
 ### ステップ 4: アプリを起動
@@ -102,6 +176,17 @@ npm start
 
 - 直前に `git pull` した／依存関係エラー（Cannot find module など）が出る → もう一度 `npm install` を実行してから起動してください。
 - Node のバージョンを切り替えた（nvm など）場合も、再度 `npm install` が必要になることがあります。
+
+#### 開発モード（dev）と通常モード（start）の違い
+
+- npm run dev
+  - 実体: `node --watch Server.js`
+  - ファイル変更を検知して自動再起動します。開発中の素早い反映に最適。
+  - 再起動時はセッションが切れる場合があるため、ログインし直しが必要になることがあります。
+- npm start
+  - 実体: `node Server.js`
+  - 自動再起動なし。運用/検証やサービスとしての起動に向きます（PM2 やサービス化と併用する想定）。
+- 機能差はありません。用途（開発か運用か）で使い分けてください。
 
 ---
 
