@@ -80,8 +80,7 @@
       .card {
         grid-column: span 12;
         background: linear-gradient(180deg, #121a31, #0e162b);
-          // ここで即時関数の閉じ括弧を追加
-          })();
+        -webkit-backdrop-filter: blur(6px);
         backdrop-filter: blur(6px);
         border: 1px solid #243055;
         border-radius: var(--radius);
@@ -249,6 +248,7 @@
           transparent,
           rgba(10, 15, 28, 0.85)
         );
+        -webkit-backdrop-filter: blur(6px);
         backdrop-filter: blur(6px);
       }
       .quote {
@@ -303,8 +303,89 @@
       }
     </style>
     <script>
-      // --- 未定義関数の追加 ---
+      // === Utilities ===
+      const $ = (s) => document.querySelector(s);
+      const $$ = (s) => Array.from(document.querySelectorAll(s));
+      const todayStr = new Date().toLocaleDateString("ja-JP", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      });
+      const keyBase = () => new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+      const LSKEY = (suffix) => `bootcamp.${suffix}`;
+
+      // グローバル変数
+      let autoSaveTimer = null;
+
+      // === グローバル関数定義 ===
+      // これらの関数をグローバルスコープで定義してIIFE内の重複定義を回避
+      
+      function collectSets() {
+        const sets = {};
+        $$(".set").forEach((ch) => {
+          const key = ch.dataset.key;
+          sets[key] = parseInt($("#" + key + "Count")?.value || "0", 10);
+        });
+        return sets;
+      }
+
+      function collectStretch() {
+        const parts = {};
+        $$(".str").forEach((ch) => {
+          const key = ch.dataset.key;
+          parts[key] = ch.checked;
+        });
+        return parts;
+      }
+
+      function updateProgress() {
+        const progressBar = $(".progress > span");
+        if (!progressBar) return;
+        
+        const s = getState();
+        const sets = collectSets();
+        const stretchParts = collectStretch();
+        
+        // 基本的な完了状況（70%の重み）
+        const basicProgress = ((s.bikeDone ? 1 : 0) + 
+                              (s.strengthDone ? 1 : 0) + 
+                              (s.stretchDone ? 1 : 0)) / 3;
+        
+        // 詳細な実行状況（30%の重み）
+        const detailProgress = (Object.values(sets).filter(v => v > 0).length + 
+                               Object.values(stretchParts).filter(v => v === true).length) / 13;
+        
+        const totalProgress = Math.round(100 * (0.7 * basicProgress + 0.3 * detailProgress));
+        progressBar.style.width = totalProgress + "%";
+        
+        // 進捗表示の更新
+        const progressText = $(".kpi .pill");
+        if (progressText) {
+          progressText.textContent = `進捗: ${totalProgress}%`;
+        }
+      }
+
       function initializeToday() {
+        // 日付を表示
+        const todayEl = document.querySelector("#today");
+        if (todayEl) {
+          todayEl.textContent = todayStr;
+        }
+
+        // 挨拶を設定
+        const hour = new Date().getHours();
+        const greetEl = $("#greet");
+        if (greetEl) {
+          greetEl.textContent =
+            hour < 5
+              ? "早朝セッション"
+              : hour < 12
+              ? "おはようございます"
+              : hour < 18
+              ? "こんにちは"
+              : "こんばんは";
+        }
+
         // 進捗バーやチェックボックスなどを初期状態に戻す
         collectSets();
         collectStretch();
@@ -313,9 +394,98 @@
         const noteEl = document.querySelector("#note");
         if (noteEl) noteEl.value = "";
       }
+      
       function testProgressBar() {
         updateProgress();
       }
+      // === データベース中心のデータ管理 ===
+      // ローカルストレージの代わりにサーバーAPIを使用
+
+      // 現在の状態を取得（サーバーから）
+      async function getState() {
+        try {
+          const ok = await ensureLogin();
+          if (!ok) return {};
+          
+          const dateKey = keyBase();
+          const res = await fetch(`/api/logs/${dateKey}`);
+          if (!res.ok) {
+            if (res.status === 404) {
+              return {}; // 今日のデータがまだない場合
+            }
+            throw new Error(`Server error: ${res.status}`);
+          }
+          
+          const data = await res.json();
+          return data || {};
+        } catch (e) {
+          console.warn("Failed to get state from server:", e);
+          return {};
+        }
+      }
+
+      // 状態を保存（サーバーに）
+      async function setState(state) {
+        try {
+          const ok = await ensureLogin();
+          if (!ok) return;
+          
+          const entry = {
+            ...state,
+            date: new Date().toISOString(),
+            dateKey: keyBase(),
+          };
+          
+          await pushTodayToServer(entry);
+        } catch (e) {
+          console.warn("Failed to set state to server:", e);
+        }
+      }
+
+      // セット数の取得
+      async function getSets() {
+        const state = await getState();
+        return state.sets || {};
+      }
+
+      // ストレッチ部位の取得
+      async function getStretchParts() {
+        const state = await getState();
+        return state.stretchParts || {};
+      }
+
+      // ログ一覧の取得（完全にサーバーから）
+      async function getJournal() {
+        try {
+          const ok = await ensureLogin();
+          if (!ok) return [];
+          
+          const res = await fetch("/api/logs");
+          if (!res.ok) throw new Error(`Server error: ${res.status}`);
+          const logs = await res.json();
+          return Array.isArray(logs) ? logs : [];
+        } catch (e) {
+          console.warn("Failed to get journal from server:", e);
+          return [];
+        }
+      }
+
+      // ログ一覧の設定（不要になったが互換性のため残す）
+      function setJournal(logs) {
+        // この関数は互換性のためのダミー
+        console.log("setJournal called (deprecated, using server directly)");
+      }
+
+      // チェック状態の更新
+      async function mark(key, checked) {
+        const state = await getState();
+        state[key] = checked;
+        await setState(state);
+        updateProgress();
+        scheduleAutoSave();
+      }
+
+      // セットアップイベントリスナー
       function setupEventListeners() {
         // 保存ボタン
         const saveBtn = document.getElementById("saveLog");
@@ -323,7 +493,193 @@
           saveBtn.addEventListener("click", () => {
             saveTodaySnapshot(false);
           });
-        // 他のボタンも必要に応じて追加
+
+        // CSVエクスポートボタン
+        const exportCsvBtn = document.getElementById("exportCsv");
+        if (exportCsvBtn) {
+          exportCsvBtn.addEventListener("click", async () => {
+            try {
+              const ok = await ensureLogin();
+              if (ok) {
+                window.open("/api/logs/export", "_blank");
+              }
+            } catch (e) {
+              console.warn("CSV export failed:", e);
+            }
+          });
+        }
+
+        // すべての記録を削除ボタン
+        const clearAllBtn = document.getElementById("clearAllLogs");
+        if (clearAllBtn) {
+          clearAllBtn.addEventListener("click", async () => {
+            if (
+              confirm("すべての記録を削除しますか？この操作は取り消せません。")
+            ) {
+              try {
+                // サーバーから全ログを取得して削除
+                const logs = await getJournal();
+                for (const log of logs) {
+                  if (log.dateKey) {
+                    await fetch(`/api/logs/${log.dateKey}`, { method: "DELETE" });
+                  }
+                }
+                await renderLogTable();
+                alert("すべての記録を削除しました。");
+              } catch (e) {
+                console.warn("Clear all logs failed:", e);
+              }
+            }
+          });
+        }
+
+        // JSONバックアップボタン
+        const exportJsonBtn = document.getElementById("exportJson");
+        if (exportJsonBtn) {
+          exportJsonBtn.addEventListener("click", async () => {
+            const logs = await getJournal();
+            const blob = new Blob([JSON.stringify(logs, null, 2)], {
+              type: "application/json",
+            });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `workout-logs-${new Date().toISOString().slice(0, 10)}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+          });
+        }
+      }
+
+      // 状態復元
+      async function restoreState() {
+        const state = await getState();
+        
+        // チェックボックスの状態を復元
+        $$(".set").forEach(async (ch) => {
+          const key = `set.${ch.dataset.key}`;
+          ch.checked = !!state[key];
+        });
+
+        $$(".str").forEach(async (ch) => {
+          const key = `str.${ch.dataset.key}`;
+          ch.checked = !!state[key];
+        });
+
+        // メイン完了チェックボックスの状態を復元
+        const strengthDoneEl = $("#strengthDone");
+        const stretchDoneEl = $("#stretchDone");
+        const bikeDoneEl = $("#bikeDone");
+
+        if (strengthDoneEl) strengthDoneEl.checked = !!state.strengthDone;
+        if (stretchDoneEl) stretchDoneEl.checked = !!state.stretchDone;
+        if (bikeDoneEl) bikeDoneEl.checked = !!state.bikeDone;
+
+        // セット数の復元
+        if (state.sets) {
+          Object.entries(state.sets).forEach(([key, value]) => {
+            const input = $(`#${key}Count`);
+            if (input) input.value = value || 0;
+          });
+        }
+
+        // メモの復元
+        const noteEl = $("#note");
+        if (noteEl && state.note) {
+          noteEl.value = state.note;
+        }
+
+        updateProgress();
+      }
+        // 保存ボタン
+        const saveBtn = document.getElementById("saveLog");
+        if (saveBtn)
+          saveBtn.addEventListener("click", () => {
+            saveTodaySnapshot(false);
+          });
+
+        // CSVエクスポートボタン
+        const exportCsvBtn = document.getElementById("exportCsv");
+        if (exportCsvBtn) {
+          exportCsvBtn.addEventListener("click", async () => {
+            try {
+              const ok = await ensureLogin();
+              if (ok) {
+                window.open("/api/logs/export", "_blank");
+              }
+            } catch (e) {
+              console.warn("CSV export failed:", e);
+            }
+          });
+        }
+
+        // すべての記録を削除ボタン
+        const clearAllBtn = document.getElementById("clearAllLogs");
+        if (clearAllBtn) {
+          clearAllBtn.addEventListener("click", async () => {
+            if (
+              confirm("すべての記録を削除しますか？この操作は取り消せません。")
+            ) {
+              try {
+                setJournal([]);
+                await renderLogTable();
+                alert("すべての記録を削除しました。");
+              } catch (e) {
+                console.warn("Clear all logs failed:", e);
+              }
+            }
+          });
+        }
+
+        // JSONバックアップボタン
+        const exportJsonBtn = document.getElementById("exportJson");
+        if (exportJsonBtn) {
+          exportJsonBtn.addEventListener("click", () => {
+            const logs = getJournal();
+            const blob = new Blob([JSON.stringify(logs, null, 2)], {
+              type: "application/json",
+            });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `bootcamp-logs-${keyBase()}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+          });
+        }
+
+        // JSON読み込みボタン
+        const importJsonBtn = document.getElementById("importJson");
+        const importJsonFile = document.getElementById("importJsonFile");
+        if (importJsonBtn && importJsonFile) {
+          importJsonBtn.addEventListener("click", () => {
+            importJsonFile.click();
+          });
+
+          importJsonFile.addEventListener("change", (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+              try {
+                const logs = JSON.parse(event.target.result);
+                if (Array.isArray(logs)) {
+                  setJournal(logs);
+                  renderLogTable();
+                  alert("JSONファイルを読み込みました。");
+                } else {
+                  alert("無効なJSONファイルです。");
+                }
+              } catch (e) {
+                alert("JSONファイルの読み込みに失敗しました。");
+              }
+            };
+            reader.readAsText(file);
+          });
+        }
       }
       function restoreState() {
         collectSets();
@@ -502,34 +858,167 @@
         });
       }
 
+      // 今日のスナップショットをサーバーに保存
       async function saveTodaySnapshot(silent = false) {
-        console.log("saveTodaySnapshot called, silent:", silent); // デバッグログ
         try {
-          const e = summarizeToday();
-          console.log("Snapshot data:", e); // デバッグログ
-          e.date = new Date().toISOString(); // snapshot time
-          upsertJournalByDate(e); // キャッシュ用途
-          await pushTodayToServer(e);
-          await renderLogTable(); // サーバー最新で再描画
+          const ok = await ensureLogin();
+          if (!ok) return;
+
+          const state = await getState();
+          const sets = collectSets();
+          const stretchParts = collectStretch();
+          
+          const entry = {
+            date: new Date().toISOString(),
+            dateKey: keyBase(),
+            progress: $("#note")?.value || "",
+            bikeDone: !!state.bikeDone,
+            strengthDone: !!state.strengthDone,
+            stretchDone: !!state.stretchDone,
+            hiit: !!$("#hiitToggle")?.checked,
+            sets: sets,
+            stretchParts: stretchParts,
+            note: $("#note")?.value || "",
+          };
+
+          await pushTodayToServer(entry);
+          
           if (!silent) {
-            alert("今日のスナップショットを保存しました。");
+            alert("今日の記録を保存しました！");
+            await renderLogTable();
           }
-          console.log("Snapshot saved successfully"); // デバッグログ
-        } catch (error) {
-          console.error("Error saving snapshot:", error); // エラーログ
+        } catch (e) {
+          console.warn("Save snapshot failed:", e);
+          if (!silent) {
+            alert("保存に失敗しました。再試行してください。");
+          }
         }
       }
 
-      // 初期化処理
+      // 自動保存のスケジューラー
+      function scheduleAutoSave() {
+        if (autoSaveTimer) clearTimeout(autoSaveTimer);
+        autoSaveTimer = setTimeout(() => {
+          saveTodaySnapshot(true); // silent mode
+        }, 2000); // 2秒後に自動保存
+      }
+
+      // データベース連携のイベントリスナー設定
+      async function setupDatabaseEventListeners() {
+        // チェックボックスのイベントリスナーを設定
+        $$(".set").forEach((ch) => {
+          ch.addEventListener("change", async (e) => {
+            const state = await getState();
+            const key = `set.${ch.dataset.key}`;
+            state[key] = e.target.checked;
+            await setState(state);
+            updateProgress();
+            scheduleAutoSave();
+          });
+        });
+
+        $$(".str").forEach((ch) => {
+          ch.addEventListener("change", async (e) => {
+            const state = await getState();
+            const key = `str.${ch.dataset.key}`;
+            state[key] = e.target.checked;
+            await setState(state);
+            updateProgress();
+            scheduleAutoSave();
+          });
+        });
+
+        // セット数入力のイベントリスナー
+        $$("input[id$='Count']").forEach((input) => {
+          input.addEventListener("input", async (e) => {
+            const state = await getState();
+            if (!state.sets) state.sets = {};
+            const key = e.target.id.replace("Count", "");
+            state.sets[key] = parseInt(e.target.value || "0", 10);
+            await setState(state);
+            updateProgress();
+            scheduleAutoSave();
+          });
+        });
+
+        // メイン完了チェックボックス
+        const strengthDoneEl = $("#strengthDone");
+        const stretchDoneEl = $("#stretchDone");
+        const bikeDoneEl = $("#bikeDone");
+
+        if (strengthDoneEl) {
+          strengthDoneEl.addEventListener("change", async (e) => {
+            await mark("strengthDone", e.target.checked);
+          });
+        }
+
+        if (stretchDoneEl) {
+          stretchDoneEl.addEventListener("change", async (e) => {
+            await mark("stretchDone", e.target.checked);
+          });
+        }
+
+        if (bikeDoneEl) {
+          bikeDoneEl.addEventListener("change", async (e) => {
+            await mark("bikeDone", e.target.checked);
+          });
+        }
+
+        // メモ欄の自動保存
+        const noteEl = $("#note");
+        if (noteEl) {
+          noteEl.addEventListener("input", () => {
+            scheduleAutoSave();
+          });
+        }
+
+        // リセットボタン
+        const resetDayBtn = $("#resetDay");
+        if (resetDayBtn) {
+          resetDayBtn.addEventListener("click", async () => {
+            if (!confirm("本日の記録をリセットしますか？")) return;
+            
+            try {
+              const dateKey = keyBase();
+              await fetch(`/api/logs/${dateKey}`, { method: "DELETE" });
+              
+              // UIをリセット
+              $$(".set, .str").forEach((ch) => (ch.checked = false));
+              $$("input[id$='Count']").forEach((input) => (input.value = "0"));
+              if (bikeDoneEl) bikeDoneEl.checked = false;
+              if (strengthDoneEl) strengthDoneEl.checked = false;
+              if (stretchDoneEl) stretchDoneEl.checked = false;
+              if (noteEl) noteEl.value = "";
+              
+              updateProgress();
+              await renderLogTable();
+            } catch (e) {
+              console.warn("Reset failed:", e);
+            }
+          });
+        }
+      }
+
+      // 初期化処理（データベース中心）
       window.addEventListener("DOMContentLoaded", async () => {
-        console.log("DOM loaded, initializing..."); // デバッグログ
-        await ensureLogin();
+        console.log("DOM loaded, initializing with database integration...");
+        
+        // ログイン確認
+        const ok = await ensureLogin();
+        if (!ok) return;
+        
+        // UI初期化
         initializeToday();
-        testProgressBar();
         setupEventListeners();
-        restoreState();
-        updateProgress();
-        await renderLogTable(); // サーバー最新で描画
+        
+        // 状態復元（データベースから）
+        await restoreState();
+        
+        // イベントリスナー設定（データベース連携）
+        await setupDatabaseEventListeners();
+        
+        // テーブル描画
+        await renderLogTable();
       });
     </script>
   </head>
@@ -603,6 +1092,7 @@
                   href="https://www.youtube.com/watch?v=Hlz_nHElfb4"
                   style="color: inherit; text-decoration: underline"
                   target="_blank"
+                  rel="noopener"
                   >エクササイズBGM / EDM</a
                 ></b
               >
@@ -624,6 +1114,7 @@
                     href="https://www.youtube.com/watch?v=Wjp7V0EK0Zg"
                     style="color: inherit; text-decoration: underline"
                     target="_blank"
+                    rel="noopener"
                     >2-1. スクワット</a
                   ></b
                 >
@@ -650,6 +1141,7 @@
                     href="https://www.youtube.com/watch?v=IdQESpQE9ew"
                     style="color: inherit; text-decoration: underline"
                     target="_blank"
+                    rel="noopener"
                     >2-2. プッシュアップ</a
                   ></b
                 >
@@ -676,6 +1168,7 @@
                     href="https://www.youtube.com/watch?v=UgkU2S8VUX4"
                     style="color: inherit; text-decoration: underline"
                     target="_blank"
+                    rel="noopener"
                     >2-3. プランク</a
                   ></b
                 >
@@ -709,6 +1202,7 @@
                     href="https://www.youtube.com/watch?v=FvU7izWY358"
                     style="color: inherit; text-decoration: underline"
                     target="_blank"
+                    rel="noopener"
                     >2-4. バードドッグ</a
                   ></b
                 >
@@ -735,6 +1229,7 @@
                     href="https://www.youtube.com/shorts/Nzbrmw71HdY"
                     style="color: inherit; text-decoration: underline"
                     target="_blank"
+                    rel="noopener"
                     >2-6. マウンテンクライマー</a
                   ></b
                 >
@@ -966,31 +1461,9 @@
       >
     </footer>
     <script>
+      // データベース中心のシンプルなIIFE（即時実行関数）
       (function () {
-        // === Utilities ===
-        const $ = (s) => document.querySelector(s);
-        const $$ = (s) => Array.from(document.querySelectorAll(s));
-        const todayStr = new Date().toLocaleDateString("ja-JP", {
-          year: "numeric",
-          month: "2-digit",
-          day: "2-digit",
-        });
-        const keyBase = () => new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-        const LSKEY = (suffix) => `bootcamp.${suffix}`;
-
-        const elToday = $("#today");
-        elToday.textContent = todayStr;
-        const hour = new Date().getHours();
-        $("#greet").textContent =
-          hour < 5
-            ? "早朝セッション"
-            : hour < 12
-            ? "おはようございます"
-            : hour < 18
-            ? "こんにちは"
-            : "こんばんは";
-
-        // === Quotes ===
+        // === 引用文のローテーション ===
         const quotes = [
           "小さく始めて、大きく続ける。",
           "昨日より1mm前へ。",
@@ -998,154 +1471,21 @@
           "継続は才能を越える。",
           "フォームは正義。回数は結果。",
         ];
+        
         function rotateQuote() {
-          $("#quote").textContent = `「${
-            quotes[Math.floor(Math.random() * quotes.length)]
-          }」`;
+          const quoteEl = document.querySelector("#quote");
+          if (quoteEl) {
+            quoteEl.textContent = `「${
+              quotes[Math.floor(Math.random() * quotes.length)]
+            }」`;
+          }
         }
+        
         setInterval(rotateQuote, 12000);
 
-        // === Progress ===
-        function getState() {
-          const k = LSKEY(keyBase() + ".state");
-          return JSON.parse(localStorage.getItem(k) || "{}");
-        }
-        function setState(state) {
-          const k = LSKEY(keyBase() + ".state");
-          localStorage.setItem(k, JSON.stringify(state));
-        }
-
-        // セット数の管理
-        function getSets() {
-          const state = getState();
-          return state.sets || {};
-        }
-        function setSets(sets) {
-          const state = getState();
-          state.sets = sets;
-          setState(state);
-        }
-
-        // ストレッチ部位の管理
-        function getStretchParts() {
-          const state = getState();
-          return state.stretchParts || {};
-        }
-        function setStretchParts(parts) {
-          const state = getState();
-          state.stretchParts = parts;
-          setState(state);
-        }
-
-        // ジャーナルの管理
-        function getJournal() {
-          return JSON.parse(localStorage.getItem(LSKEY("journal")) || "[]");
-        }
-        function setJournal(journal) {
-          localStorage.setItem(LSKEY("journal"), JSON.stringify(journal));
-        }
-
-        function mark(name, value) {
-          console.log("mark called with:", name, value); // デバッグログ
-          const s = getState();
-          console.log("Current state before mark:", s); // デバッグログ
-          s[name] = value;
-          setState(s);
-          console.log("State after mark:", s); // デバッグログ
-          updateProgress();
-        }
-
-        function updateProgress() {
-          console.log("updateProgress called"); // デバッグログ
-
-          // Auto-save hook: whenever progress recalculates, schedule snapshot
-          scheduleAutoSave();
-
-          // 1) 状態（localStorage）から取得
-          const s = getState();
-          let bike = !!s.bikeDone;
-          let strength = !!s.strengthDone;
-          let stretch = !!s.stretchDone;
-          let sets = getSets();
-          let stretchParts = getStretchParts();
-
-          // 2) フォールバック：DOMの現在値を優先（イベント未接続でも動く）
-          const bikeEl = document.getElementById("bikeDone");
-          const strEl = document.getElementById("strengthDone");
-          const stEl = document.getElementById("stretchDone");
-          if (bikeEl) bike = bikeEl.checked;
-          if (strEl) strength = strEl.checked;
-          if (stEl) stretch = stEl.checked;
-
-          // セット/ストレッチ部位が未定義なら空扱い
-          if (!sets || typeof sets !== "object") sets = {};
-          if (!stretchParts || typeof stretchParts !== "object")
-            stretchParts = {};
-
-          console.log("State/DOM merged:", {
-            bike,
-            strength,
-            stretch,
-            sets,
-            stretchParts,
-          });
-
-          // メイン項目の完了率 (70%)
-          const big =
-            ((bike ? 1 : 0) + (strength ? 1 : 0) + (stretch ? 1 : 0)) / 3;
-
-          // 詳細項目の完了率 (30%)
-          const setValues = Object.values(sets).filter((v) => Number(v) > 0);
-          const stretchValues = Object.values(stretchParts).filter(
-            (v) => v === true
-          );
-          const microTotal = 13; // 6セット + 7ストレッチ部位
-          const microDone = setValues.length + stretchValues.length;
-          const microRate = microTotal > 0 ? microDone / microTotal : 0;
-
-          const pct = Math.round(100 * (0.7 * big + 0.3 * microRate));
-
-          console.log("Progress calculated:", pct + "%"); // デバッグログ
-
-          const progressBar = $("#progressBar");
-          const progressText = $("#progressText");
-          if (progressBar) progressBar.style.width = pct + "%";
-          if (progressText) progressText.textContent = pct + "%";
-
-          // streak
-          const streak = Number(localStorage.getItem(LSKEY("streak")) || "0");
-          const streakEl = $("#streak");
-          if (streakEl) streakEl.textContent = streak;
-        }
-
-        // === Streak handling ===
-        (function () {
-          const last = localStorage.getItem(LSKEY("lastOpen"));
-          const today = keyBase();
-          if (last !== today) {
-            // new day -> if yesterday had any completion, keep streak; otherwise maybe break.
-            const yKey = new Date(Date.now() - 86400000)
-              .toISOString()
-              .slice(0, 10);
-            const yState = JSON.parse(
-              localStorage.getItem(`bootcamp.${yKey}.state`) || "{}"
-            );
-            const had =
-              yState.bikeDone || yState.strengthDone || yState.stretchDone;
-            let streak = Number(localStorage.getItem(LSKEY("streak")) || "0");
-            if (had) {
-              streak = streak + 1;
-            } else {
-              streak = 0;
-            }
-            localStorage.setItem(LSKEY("streak"), String(streak));
-            localStorage.setItem(LSKEY("lastOpen"), today);
-          }
-        })();
-
-        // === Aerobike Timer ===
-        const segmentsEl = $("#segments");
-        const hiitToggle = $("#hiitToggle");
+        // === エアロバイクタイマー機能 ===
+        const segmentsEl = document.querySelector("#segments");
+        const hiitToggle = document.querySelector("#hiitToggle");
 
         function baseSegments() {
           return [
@@ -1154,6 +1494,7 @@
             { name: "クールダウン", mins: 5, tip: "軽め" },
           ];
         }
+
         function withHIIT() {
           return [
             { name: "ウォームアップ", mins: 3, tip: "心拍100–110" },
@@ -1163,7 +1504,10 @@
             { name: "クールダウン", mins: 5, tip: "軽め" },
           ];
         }
+
         function renderSegments() {
+          if (!segmentsEl || !hiitToggle) return;
+          
           const arr = hiitToggle.checked ? withHIIT() : baseSegments();
           segmentsEl.innerHTML = "";
           arr.forEach((seg, i) => {
@@ -1174,12 +1518,17 @@
             segmentsEl.appendChild(div);
           });
         }
-        hiitToggle.addEventListener("change", () => {
-          renderSegments();
-          resetTimer();
-        });
+
+        if (hiitToggle) {
+          hiitToggle.addEventListener("change", () => {
+            renderSegments();
+            resetTimer();
+          });
+        }
+
         renderSegments();
 
+        // タイマー関連の変数
         let timer = null,
           totalSec = 0,
           plan = [],
@@ -1188,6 +1537,8 @@
           running = false;
 
         function loadPlan() {
+          if (!hiitToggle) return;
+          
           plan = (hiitToggle.checked ? withHIIT() : baseSegments()).map(
             (s) => ({ ...s, sec: s.mins * 60 })
           );
@@ -1195,20 +1546,25 @@
           cursor = 0;
           segRemain = plan[0].sec;
           highlightSeg();
-          $("#clock").textContent = fmt(totalSec);
+          const clockEl = document.querySelector("#clock");
+          if (clockEl) clockEl.textContent = fmt(totalSec);
         }
+
         function fmt(sec) {
           const m = Math.floor(sec / 60),
             s = sec % 60;
           return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
         }
+
         function highlightSeg() {
-          $$("#segments .seg").forEach((el, i) => {
+          const segs = document.querySelectorAll("#segments .seg");
+          segs.forEach((el, i) => {
             el.style.borderColor = i === cursor ? "#33d1ff" : "#2a3968";
             el.style.boxShadow =
               i === cursor ? "0 0 0 1px #33d1ff inset" : "none";
           });
         }
+
         function beep() {
           try {
             const a = new (window.AudioContext || window.webkitAudioContext)();
@@ -1227,6 +1583,7 @@
             }, 180);
           } catch (e) {}
         }
+
         function tick() {
           if (!running) return;
           if (totalSec <= 0) {
@@ -1235,9 +1592,10 @@
           }
           totalSec--;
           segRemain--;
-          $("#clock").textContent = fmt(totalSec);
+          const clockEl = document.querySelector("#clock");
+          if (clockEl) clockEl.textContent = fmt(totalSec);
 
-          // 3分ごとに音を鳴らす（残り時間が3分の倍数で、0以外のとき）
+          // 3分ごとに音を鳴らす
           if (totalSec > 0 && totalSec % 180 === 0) {
             beep();
           }
@@ -1251,294 +1609,231 @@
             }
           }
         }
+
         function startTimer() {
           if (running) return;
           if (totalSec <= 0) loadPlan();
           running = true;
           timer = setInterval(tick, 1000);
         }
+
         function pauseTimer() {
           running = false;
           if (timer) clearInterval(timer);
         }
+
         function resetTimer() {
           pauseTimer();
           loadPlan();
         }
-        function finishBike() {
+
+        async function finishBike() {
           pauseTimer();
-          $("#clock").textContent = "完了！";
-          $("#bikeDone").checked = true;
-          mark("bikeDone", true);
+          const clockEl = document.querySelector("#clock");
+          if (clockEl) clockEl.textContent = "完了！";
+          const bikeDoneEl = document.querySelector("#bikeDone");
+          if (bikeDoneEl) {
+            bikeDoneEl.checked = true;
+            await mark("bikeDone", true);
+          }
           beep();
           setTimeout(beep, 220);
         }
 
-        $("#start").addEventListener("click", startTimer);
-        $("#pause").addEventListener("click", pauseTimer);
-        $("#reset").addEventListener("click", resetTimer);
-        $("#bikeDone").addEventListener("change", (e) =>
-          mark("bikeDone", e.target.checked)
-        );
+        // タイマーボタンのイベントリスナー
+        const startBtn = document.querySelector("#start");
+        const pauseBtn = document.querySelector("#pause");
+        const resetBtn = document.querySelector("#reset");
+
+        if (startBtn) startBtn.addEventListener("click", startTimer);
+        if (pauseBtn) pauseBtn.addEventListener("click", pauseTimer);
+        if (resetBtn) resetBtn.addEventListener("click", resetTimer);
+
         loadPlan();
 
-        // === Plank 30s helper ===
-        $("#plank30").addEventListener("click", () => {
-          const btn = $("#plank30");
-          btn.disabled = true;
-          btn.textContent = "⏳ 30秒";
-          let s = 30;
-          const t = setInterval(() => {
-            s--;
-            btn.textContent = `⏳ ${s}秒`;
-            if (s <= 0) {
-              clearInterval(t);
-              beep();
-              btn.textContent = "▶ 30秒タイマー";
-              btn.disabled = false;
-            }
-          }, 1000);
-        });
-
-        // === Strength / Stretch check handlers ===
-        function collectSets() {
-          const s = getState();
-          const keys = [
-            "sq-1",
-            "sq-2",
-            "pu-1",
-            "pu-2",
-            "pl-1",
-            "pl-2",
-            "pl-3",
-            "bd-1",
-            "bd-2",
-            "hl-1",
-            "hl-2",
-            "mc-1",
-            "mc-2",
-          ];
-          const arr = keys.map((k) => !!s[`set.${k}`]);
-          s.sets = arr;
-          setState(s);
-        }
-        $$(".set").forEach((ch) => {
-          const key = `set.${ch.dataset.key}`;
-          ch.checked = !!getState()[key];
-          ch.addEventListener("change", (e) => {
-            const s = getState();
-            s[key] = e.target.checked;
-            setState(s);
-            collectSets();
-            updateProgress();
-          });
-        });
-        $("#strengthDone").checked = !!getState().strengthDone;
-        $("#strengthDone").addEventListener("change", (e) =>
-          mark("strengthDone", e.target.checked)
-        );
-
-        function collectStretch() {
-          const s = getState();
-          const keys = ["st-thigh", "st-calf", "st-shoulder", "st-chest"];
-          s.stretchParts = keys.map((k) => !!s[`str.${k}`]);
-          setState(s);
-        }
-        $$(".str").forEach((ch) => {
-          const key = `str.${ch.dataset.key}`;
-          ch.checked = !!getState()[key];
-          ch.addEventListener("change", (e) => {
-            const s = getState();
-            s[key] = e.target.checked;
-            setState(s);
-            collectStretch();
-            updateProgress();
-          });
-        });
-        $("#stretchDone").checked = !!getState().stretchDone;
-        $("#stretchDone").addEventListener("change", (e) =>
-          mark("stretchDone", e.target.checked)
-        );
-
-        collectSets();
-        collectStretch();
-        updateProgress();
-
-        // === Reset today ===
-        $("#resetDay").addEventListener("click", () => {
-          if (!confirm("本日の記録をリセットしますか？")) return;
-          localStorage.removeItem(LSKEY(keyBase() + ".state"));
-          // Uncheck all
-          $$(".set, .str").forEach((ch) => (ch.checked = false));
-          $("#bikeDone").checked = false;
-          $("#strengthDone").checked = false;
-          $("#stretchDone").checked = false;
-          updateProgress();
-        });
-
-        // === Journal (Daily Logs) ===
-        function LS_JOURNAL_KEY() {
-          return LSKEY("journal");
-        }
-
-        function getJournal() {
-          return JSON.parse(localStorage.getItem(LS_JOURNAL_KEY()) || "[]");
-        }
-        function setJournal(arr) {
-          localStorage.setItem(LS_JOURNAL_KEY(), JSON.stringify(arr));
-        }
-
-        function progressValue() {
-          // Recalculate using the same logic as updateProgress()
-          const s = getState();
-          const sets = getSets();
-          const stretchParts = getStretchParts();
-
-          // メイン項目の完了率 (70%)
-          const big =
-            ((s.bikeDone ? 1 : 0) +
-              (s.strengthDone ? 1 : 0) +
-              (s.stretchDone ? 1 : 0)) /
-            3;
-
-          // 詳細項目の完了率 (30%)
-          const setValues = Object.values(sets).filter((v) => v > 0);
-          const stretchValues = Object.values(stretchParts).filter(
-            (v) => v === true
-          );
-          const microTotal = 13; // 6セット + 7ストレッチ部位
-          const microDone = setValues.length + stretchValues.length;
-          const microRate = microTotal > 0 ? microDone / microTotal : 0;
-
-          return Math.round(100 * (0.7 * big + 0.3 * microRate));
-        }
-
-        function summarizeSets() {
-          const s = getState();
-          const m = {
-            sq: (s.sets || []).slice(0, 2), // sq-1, sq-2
-            pu: (s.sets || []).slice(2, 4), // pu-1, pu-2
-            pl: (s.sets || []).slice(4, 7), // pl-1..3
-            bd: (s.sets || []).slice(7, 9), // bd-1..2
-            hl: (s.sets || []).slice(9, 11), // hl-1..2
-            mc: (s.sets || []).slice(11, 13), // mc-1..2
-          };
-          const sum = (arr) => arr.reduce((a, b) => a + (b ? 1 : 0), 0);
-          return {
-            sq: sum(m.sq),
-            pu: sum(m.pu),
-            pl: sum(m.pl),
-            bd: sum(m.bd),
-            hl: sum(m.hl),
-            mc: sum(m.mc),
-          };
-        }
-
-        function summarizeToday() {
-          const s = getState();
-          const sets = getSets();
-          const stretchParts = getStretchParts();
-
-          return {
-            date: new Date().toISOString(),
-            dateKey: keyBase(),
-            progress: progressValue(),
-            bikeDone: !!s.bikeDone,
-            strengthDone: !!s.strengthDone,
-            stretchDone: !!s.stretchDone,
-            hiit: !!document.querySelector("#hiitToggle")?.checked,
-            sets: {
-              sq: sets.sq || 0,
-              pu: sets.pu || 0,
-              pl: sets.pl || 0,
-              bd: sets.bd || 0,
-              hl: sets.hl || 0,
-              mc: sets.mc || 0,
-            },
-            stretchParts: Object.values(stretchParts).filter(Boolean).length,
-            note: document.querySelector("#note")?.value || "",
-          };
-        }
-
-        // サーバーから取得した最新データのみで描画
-        async function renderLogTable() {
-          const tbody = document.querySelector("#logTable tbody");
-          if (!tbody) return;
-          tbody.innerHTML = "";
-          let logs = [];
-          try {
-            const ok = await ensureLogin();
-            if (!ok) return;
-            const res = await fetch("/api/logs");
-            if (!res.ok) throw new Error(`Server error: ${res.status}`);
-            logs = await res.json();
-            setJournal(Array.isArray(logs) ? logs : []); // キャッシュ用途
-          } catch (e) {
-            // サーバー取得失敗時のみローカルキャッシュを表示
-            logs = getJournal();
-          }
-          logs = (logs || []).slice().sort((a, b) => {
-            const ak = a.dateKey || (a.date ? a.date.slice(0, 10) : "");
-            const bk = b.dateKey || (b.date ? b.date.slice(0, 10) : "");
-            if (ak === bk) return (b.date || "").localeCompare(a.date || "");
-            return bk.localeCompare(ak);
-          });
-          if (logs.length === 0) {
-            const tr = document.createElement("tr");
-            tr.innerHTML = `<td colspan="12" style="padding:10px; color:#9fb2d9;">まだ記録がありません。右の「今日の記録を保存」を押すとここに表示されます。</td>`;
-            tbody.appendChild(tr);
-            return;
-          }
-          logs.forEach((lg) => {
-            const tr = document.createElement("tr");
-            tr.style.borderBottom = "1px solid #223259";
-            const dt = new Date(lg.date || `${lg.dateKey}T00:00:00`);
-            const dtStr = isNaN(dt.getTime())
-              ? lg.dateKey || "-"
-              : dt.toLocaleString("ja-JP", {
-                year: "numeric",
-                month: "2-digit",
-                day: "2-digit",
-                hour: "2-digit",
-                minute: "2-digit",
-              });
-            tr.innerHTML = `
-              <td style="padding:8px;">${dtStr}</td>
-              <td style="padding:8px;">${lg.progress ?? "-"}</td>
-              <td style="padding:8px;">${
-                lg.bikeDone ? (lg.hiit ? "有酸素+HIIT" : "有酸素") : "-"
-              }</td>
-              <td style="padding:8px;">${lg.sets?.sq ?? 0}</td>
-              <td style="padding:8px;">${lg.sets?.pu ?? 0}</td>
-              <td style="padding:8px;">${lg.sets?.pl ?? 0}</td>
-              <td style="padding:8px;">${lg.sets?.bd ?? 0}</td>
-              <td style="padding:8px;">${lg.sets?.hl ?? 0}</td>
-              <td style="padding:8px;">${lg.sets?.mc ?? 0}</td>
-              <td style="padding:8px;">${lg.stretchDone ? "✔" : "-"}</td>
-              <td style="padding:8px; max-width:320px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${(
-                lg.note || ""
-              ).replace(/"/g, "&quot;")}">${lg.note || ""}</td>
-              <td style="padding:8px;"><button class="btn ghost small" data-datekey="${
-                lg.dateKey
-              }">削除</button></td>
-            `;
-            tr.querySelector("button").addEventListener("click", async (e) => {
-              const key = e.target.dataset.datekey;
-              if (confirm("この日の記録を削除しますか？")) {
-                try {
-                  const ok = await ensureLogin();
-                  if (ok) {
-                    await fetch(`/api/logs/${encodeURIComponent(key)}`, { method: "DELETE" });
-                    await renderLogTable();
-                  }
-                } catch (err) {
-                  console.warn("Failed to delete on server:", err);
-                }
+        // === プランク30秒タイマー ===
+        const plank30Btn = document.querySelector("#plank30");
+        if (plank30Btn) {
+          plank30Btn.addEventListener("click", () => {
+            plank30Btn.disabled = true;
+            plank30Btn.textContent = "⏳ 30秒";
+            let s = 30;
+            const t = setInterval(() => {
+              s--;
+              plank30Btn.textContent = `⏳ ${s}秒`;
+              if (s <= 0) {
+                clearInterval(t);
+                beep();
+                plank30Btn.textContent = "▶ 30秒タイマー";
+                plank30Btn.disabled = false;
               }
-            });
-            tbody.appendChild(tr);
+            }, 1000);
           });
         }
+
+        // === 連続日数（ストリーク）管理 ===
+        function updateStreak() {
+          const LSKEY = (suffix) => `bootcamp.${suffix}`;
+          const keyBase = () => new Date().toISOString().slice(0, 10);
+          
+          const last = localStorage.getItem(LSKEY("lastOpen"));
+          const today = keyBase();
+          
+          if (last !== today) {
+            // 新しい日 - 昨日の実績をチェック
+            const yKey = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+            const yState = JSON.parse(localStorage.getItem(`bootcamp.${yKey}.state`) || "{}");
+            const had = yState.bikeDone || yState.strengthDone || yState.stretchDone;
+            
+            let streak = Number(localStorage.getItem(LSKEY("streak")) || "0");
+            if (had) {
+              streak = streak + 1;
+            } else {
+              streak = 0;
+            }
+            
+            localStorage.setItem(LSKEY("streak"), String(streak));
+            localStorage.setItem(LSKEY("lastOpen"), today);
+          }
+          
+          // ストリーク表示を更新
+          const streak = Number(localStorage.getItem(LSKEY("streak")) || "0");
+          const streakEl = document.querySelector("#streak");
+          if (streakEl) streakEl.textContent = streak;
+        }
+
+        updateStreak();
+      })();
+    </script>
+              hiit: !!document.querySelector("#hiitToggle")?.checked,
+              sets: {
+                sq: sets.sq || 0,
+                pu: sets.pu || 0,
+                pl: sets.pl || 0,
+                bd: sets.bd || 0,
+                hl: sets.hl || 0,
+                mc: sets.mc || 0,
+              },
+              stretchParts: Object.values(stretchParts).filter(Boolean).length,
+              note: document.querySelector("#note")?.value || "",
+            };
+          }
+
+          // === イベントリスナーの設定 ===
+          // チェックボックスのイベントリスナーを設定
+          $$(".set").forEach((ch) => {
+            const key = `set.${ch.dataset.key}`;
+            ch.checked = !!getState()[key];
+            ch.addEventListener("change", (e) => {
+              const s = getState();
+              s[key] = e.target.checked;
+              setState(s);
+              collectSets();
+              updateProgress();
+            });
+          });
+
+          $$(".str").forEach((ch) => {
+            const key = `str.${ch.dataset.key}`;
+            ch.checked = !!getState()[key];
+            ch.addEventListener("change", (e) => {
+              const s = getState();
+              s[key] = e.target.checked;
+              setState(s);
+              collectStretch();
+              updateProgress();
+            });
+          });
+
+          // メイン完了チェックボックス
+          const strengthDoneEl = $("#strengthDone");
+          const stretchDoneEl = $("#stretchDone");
+          const bikeDoneEl = $("#bikeDone");
+
+          if (strengthDoneEl) {
+            strengthDoneEl.checked = !!getState().strengthDone;
+            strengthDoneEl.addEventListener("change", (e) =>
+              mark("strengthDone", e.target.checked)
+            );
+          }
+
+          if (stretchDoneEl) {
+            stretchDoneEl.checked = !!getState().stretchDone;
+            stretchDoneEl.addEventListener("change", (e) =>
+              mark("stretchDone", e.target.checked)
+            );
+          }
+
+          if (bikeDoneEl) {
+            bikeDoneEl.checked = !!getState().bikeDone;
+            bikeDoneEl.addEventListener("change", (e) =>
+              mark("bikeDone", e.target.checked)
+            );
+          }
+
+          // リセットボタン
+          const resetDayBtn = $("#resetDay");
+          if (resetDayBtn) {
+            resetDayBtn.addEventListener("click", () => {
+              if (!confirm("本日の記録をリセットしますか？")) return;
+              localStorage.removeItem(LSKEY(keyBase() + ".state"));
+              // Uncheck all
+              $$(".set, .str").forEach((ch) => (ch.checked = false));
+              if (bikeDoneEl) bikeDoneEl.checked = false;
+              if (strengthDoneEl) strengthDoneEl.checked = false;
+              if (stretchDoneEl) stretchDoneEl.checked = false;
+              updateProgress();
+            });
+          }
+
+          // 初期化
+          collectSets();
+          collectStretch();
+          updateProgress();
+
+          // 日付と挨拶を設定
+          const todayEl = $("#today");
+          if (todayEl) todayEl.textContent = todayStr;
+
+          const hour = new Date().getHours();
+          const greetEl = $("#greet");
+          if (greetEl) {
+            greetEl.textContent =
+              hour < 5
+                ? "早朝セッション"
+                : hour < 12
+                ? "おはようございます"
+                : hour < 18
+                ? "こんにちは"
+                : "こんばんは";
+          }
+
+          // Streak処理
+          const last = localStorage.getItem(LSKEY("lastOpen"));
+          const today = keyBase();
+          if (last !== today) {
+            const yKey = new Date(Date.now() - 86400000)
+              .toISOString()
+              .slice(0, 10);
+            const yState = JSON.parse(
+              localStorage.getItem(`bootcamp.${yKey}.state`) || "{}"
+            );
+            const had =
+              yState.bikeDone || yState.strengthDone || yState.stretchDone;
+            let streak = Number(localStorage.getItem(LSKEY("streak")) || "0");
+            if (had) {
+              streak = streak + 1;
+            } else {
+              streak = 0;
+            }
+            localStorage.setItem(LSKEY("streak"), String(streak));
+            localStorage.setItem(LSKEY("lastOpen"), today);
+          }
+
+          // 初回進捗更新
+          updateProgress();
+        }
+      })();
     </script>
   </body>
 </html>
