@@ -9,7 +9,7 @@ node_modules/
 
 # 環境ファイル（シークレット）
 .env
-
+cd
 # ログ
 npm-debug.log*
 yarn-debug.log*

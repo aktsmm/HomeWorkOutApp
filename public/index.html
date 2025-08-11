@@ -265,6 +265,40 @@
       .small {
         font-size: 12px;
       }
+      .log-table-wrap {
+        overflow-x: auto;
+        width: 100%;
+        border-radius: 12px;
+        border: 1px solid #223259;
+        background: #0f1831;
+      }
+      #logTable {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+        min-width: 700px;
+      }
+      #logTable th,
+      #logTable td {
+        min-width: 70px;
+        padding: 6px 4px;
+        word-break: break-word;
+        text-align: left;
+      }
+      @media (max-width: 600px) {
+        #logTable {
+          font-size: 11px;
+          min-width: 480px;
+        }
+        #logTable th,
+        #logTable td {
+          min-width: 48px;
+          padding: 4px 2px;
+        }
+        .log-table-wrap {
+          border-radius: 8px;
+        }
+      }
     </style>
     <script>
       // --- ログイン状態の確認（リダイレクト対応） ---
@@ -356,6 +390,119 @@
           console.warn("Failed to fetch logs from server:", e);
         }
       }
+
+      // サーバーから取得した最新データのみで描画
+      async function renderLogTable() {
+        const tbody = document.querySelector("#logTable tbody");
+        if (!tbody) return;
+        tbody.innerHTML = "";
+        let logs = [];
+        try {
+          const ok = await ensureLogin();
+          if (!ok) return;
+          const res = await fetch("/api/logs");
+          if (!res.ok) throw new Error(`Server error: ${res.status}`);
+          logs = await res.json();
+          setJournal(Array.isArray(logs) ? logs : []); // キャッシュ用途
+        } catch (e) {
+          // サーバー取得失敗時のみローカルキャッシュを表示
+          logs = getJournal();
+        }
+        logs = (logs || []).slice().sort((a, b) => {
+          const ak = a.dateKey || (a.date ? a.date.slice(0, 10) : "");
+          const bk = b.dateKey || (b.date ? b.date.slice(0, 10) : "");
+          if (ak === bk) return (b.date || "").localeCompare(a.date || "");
+          return bk.localeCompare(ak);
+        });
+        if (logs.length === 0) {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `<td colspan="12" style="padding:10px; color:#9fb2d9;">まだ記録がありません。右の「今日の記録を保存」を押すとここに表示されます。</td>`;
+          tbody.appendChild(tr);
+          return;
+        }
+        logs.forEach((lg) => {
+          const tr = document.createElement("tr");
+          tr.style.borderBottom = "1px solid #223259";
+          const dt = new Date(lg.date || `${lg.dateKey}T00:00:00`);
+          const dtStr = isNaN(dt.getTime())
+            ? lg.dateKey || "-"
+            : dt.toLocaleString("ja-JP", {
+                year: "numeric",
+                month: "2-digit",
+                day: "2-digit",
+                hour: "2-digit",
+                minute: "2-digit",
+              });
+          tr.innerHTML = `
+            <td style="padding:8px;">${dtStr}</td>
+            <td style="padding:8px;">${lg.progress ?? "-"}</td>
+            <td style="padding:8px;">${
+              lg.bikeDone ? (lg.hiit ? "有酸素+HIIT" : "有酸素") : "-"
+            }</td>
+            <td style="padding:8px;">${lg.sets?.sq ?? 0}</td>
+            <td style="padding:8px;">${lg.sets?.pu ?? 0}</td>
+            <td style="padding:8px;">${lg.sets?.pl ?? 0}</td>
+            <td style="padding:8px;">${lg.sets?.bd ?? 0}</td>
+            <td style="padding:8px;">${lg.sets?.hl ?? 0}</td>
+            <td style="padding:8px;">${lg.sets?.mc ?? 0}</td>
+            <td style="padding:8px;">${lg.stretchDone ? "✔" : "-"}</td>
+            <td style="padding:8px; max-width:320px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${(
+              lg.note || ""
+            ).replace(/"/g, "&quot;")}">${lg.note || ""}</td>
+            <td style="padding:8px;"><button class="btn ghost small" data-datekey="${
+              lg.dateKey
+            }">削除</button></td>
+          `;
+          tr.querySelector("button").addEventListener("click", async (e) => {
+            const key = e.target.dataset.datekey;
+            if (confirm("この日の記録を削除しますか？")) {
+              try {
+                const ok = await ensureLogin();
+                if (ok) {
+                  await fetch(`/api/logs/${encodeURIComponent(key)}`, {
+                    method: "DELETE",
+                  });
+                  await renderLogTable();
+                }
+              } catch (err) {
+                console.warn("Failed to delete on server:", err);
+              }
+            }
+          });
+          tbody.appendChild(tr);
+        });
+      }
+
+      async function saveTodaySnapshot(silent = false) {
+        console.log("saveTodaySnapshot called, silent:", silent); // デバッグログ
+        try {
+          const e = summarizeToday();
+          console.log("Snapshot data:", e); // デバッグログ
+          e.date = new Date().toISOString(); // snapshot time
+          upsertJournalByDate(e); // キャッシュ用途
+          await pushTodayToServer(e);
+          await renderLogTable(); // サーバー最新で再描画
+          if (!silent) {
+            alert("今日のスナップショットを保存しました。");
+          }
+          console.log("Snapshot saved successfully"); // デバッグログ
+        } catch (error) {
+          console.error("Error saving snapshot:", error); // エラーログ
+        }
+      }
+
+      // 初期化処理
+      window.addEventListener("DOMContentLoaded", async () => {
+        console.log("DOM loaded, initializing..."); // デバッグログ
+        await ensureLogin();
+        initializeToday();
+        testProgressBar();
+        setupEventListeners();
+        restoreState();
+        updateProgress();
+        await renderLogTable(); // サーバー最新で描画
+        // ...existing code...
+      });
     </script>
   </head>
   <body>
@@ -557,32 +704,6 @@
               <div class="meta">
                 <b
                   ><a
-                    href="https://www.youtube.com/watch?v=FdEmJ3wPC_Y"
-                    style="color: inherit; text-decoration: underline"
-                    target="_blank"
-                    >2-5. ヒップリフト</a
-                  ></b
-                >
-                <span class="tag">15回 × 2セット</span>
-                <div class="steps">
-                  仰向け膝立て／肩〜膝一直線／頂点で1秒止めて下ろす
-                </div>
-              </div>
-              <div class="checkset">
-                <label
-                  ><input class="set" data-key="hl-1" type="checkbox" />
-                  1</label
-                >
-                <label
-                  ><input class="set" data-key="hl-2" type="checkbox" />
-                  2</label
-                >
-              </div>
-            </div>
-            <div class="ex">
-              <div class="meta">
-                <b
-                  ><a
                     href="https://www.youtube.com/shorts/Nzbrmw71HdY"
                     style="color: inherit; text-decoration: underline"
                     target="_blank"
@@ -684,13 +805,7 @@
             <div class="small muted">
               ※ 保存すると下の履歴に追加されます（ブラウザのローカルに保存）。
             </div>
-            <div
-              style="
-                overflow: auto;
-                border: 1px solid #223259;
-                border-radius: 12px;
-              "
-            >
+            <div class="log-table-wrap">
               <table
                 id="logTable"
                 style="width: 100%; border-collapse: collapse; font-size: 13px"
@@ -1311,26 +1426,35 @@
           };
         }
 
-        function renderLogTable() {
+        // サーバーから取得した最新データのみで描画
+        async function renderLogTable() {
           const tbody = document.querySelector("#logTable tbody");
           if (!tbody) return;
           tbody.innerHTML = "";
-
-          const logs = (getJournal() || []).slice().sort((a, b) => {
-            // dateKey desc, fallback to date
+          let logs = [];
+          try {
+            const ok = await ensureLogin();
+            if (!ok) return;
+            const res = await fetch("/api/logs");
+            if (!res.ok) throw new Error(`Server error: ${res.status}`);
+            logs = await res.json();
+            setJournal(Array.isArray(logs) ? logs : []); // キャッシュ用途
+          } catch (e) {
+            // サーバー取得失敗時のみローカルキャッシュを表示
+            logs = getJournal();
+          }
+          logs = (logs || []).slice().sort((a, b) => {
             const ak = a.dateKey || (a.date ? a.date.slice(0, 10) : "");
             const bk = b.dateKey || (b.date ? b.date.slice(0, 10) : "");
             if (ak === bk) return (b.date || "").localeCompare(a.date || "");
             return bk.localeCompare(ak);
           });
-
           if (logs.length === 0) {
             const tr = document.createElement("tr");
             tr.innerHTML = `<td colspan="12" style="padding:10px; color:#9fb2d9;">まだ記録がありません。右の「今日の記録を保存」を押すとここに表示されます。</td>`;
             tbody.appendChild(tr);
             return;
           }
-
           logs.forEach((lg) => {
             const tr = document.createElement("tr");
             tr.style.borderBottom = "1px solid #223259";
@@ -1364,438 +1488,14 @@
                 lg.dateKey
               }">削除</button></td>
             `;
-            tr.querySelector("button").addEventListener("click", (e) => {
-              const key = e.target.dataset.datekey;
-              const list = getJournal();
-              const idx = list.findIndex((x) => (x.dateKey || "") === key);
-              if (idx >= 0 && confirm("この日の記録を削除しますか？")) {
-                list.splice(idx, 1);
-                setJournal(list);
-                renderLogTable();
-              }
-            });
-            tbody.appendChild(tr);
-          });
-        }
-
-        function saveTodayLogDeprecated_DO_NOT_USE() {
-          const entry = summarizeToday();
-          const logs = getJournal();
-          logs.push(entry);
-          setJournal(logs);
-          renderLogTable();
-          alert("今日の記録を保存しました。");
-        }
-
-        function exportCsv() {
-          const logs = getJournal();
-          const header = [
-            "datetime",
-            "dateKey",
-            "progress",
-            "bikeDone",
-            "hiit",
-            "strengthDone",
-            "stretchDone",
-            "sq_sets",
-            "pu_sets",
-            "pl_sets",
-            "bd_sets",
-            "hl_sets",
-            "mc_sets",
-            "stretchParts",
-            "note",
-          ];
-          const rows = logs.map((lg) => [
-            lg.date,
-            lg.dateKey,
-            lg.progress,
-            lg.bikeDone,
-            lg.hiit,
-            lg.strengthDone,
-            lg.stretchDone,
-            lg.sets?.sq ?? 0,
-            lg.sets?.pu ?? 0,
-            lg.sets?.pl ?? 0,
-            lg.sets?.bd ?? 0,
-            lg.sets?.hl ?? 0,
-            lg.sets?.mc ?? 0,
-            lg.stretchParts ?? 0,
-            (lg.note || "").replace(/\r?\n/g, " "),
-          ]);
-          const csv = [header.join(","), ...rows.map((r) => r.join(","))].join(
-            "\\n"
-          );
-          const blob = new Blob([csv], { type: "text/csv" });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = `bootcamp_journal_${keyBase()}.csv`;
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
-          URL.revokeObjectURL(url);
-        }
-
-        function clearAllLogs() {
-          if (!confirm("すべての記録を削除します。よろしいですか？")) return;
-          setJournal([]);
-          renderLogTable();
-        }
-
-        // Bind buttons after DOM ready
-        window.addEventListener("DOMContentLoaded", async () => {
-          console.log("DOM loaded, initializing..."); // デバッグログ
-
-          // ログイン状態を確認
-          await ensureLogin();
-
-          // 今日の日付を表示
-          initializeToday();
-
-          // プログレスバーのテスト
-          testProgressBar();
-
-          // 基本的なイベントリスナーを設定
-          setupEventListeners();
-
-          // 進捗状態を復元・更新
-          restoreState();
-          updateProgress();
-
-          // ログテーブルを表示（初期はローカルを描画し、その後サーバーから同期）
-          renderLogTable();
-          await fetchLogsFromServer();
-
-          // 追加ボタンのバインド（JSON import/export）
-          const expJ = document.getElementById("exportJson");
-          const impJ = document.getElementById("importJson");
-          const file = document.getElementById("importJsonFile");
-          if (expJ) expJ.addEventListener("click", exportJson);
-          if (impJ) impJ.addEventListener("click", () => file && file.click());
-          if (file)
-            file.addEventListener("change", (e) => {
-              if (e.target.files && e.target.files[0])
-                importJson(e.target.files[0]);
-            });
-        });
-
-        // プログレスバーのテスト関数
-        function testProgressBar() {
-          console.log("Testing progress bar..."); // デバッグログ
-          const progressBar = document.getElementById("progressBar");
-          const progressText = document.getElementById("progressText");
-
-          if (progressBar) {
-            console.log("ProgressBar found, setting test width"); // デバッグログ
-            progressBar.style.width = "50%";
-            progressBar.style.backgroundColor = "#33d1ff"; // 色を確実に設定
-          } else {
-            console.error("ProgressBar element not found!"); // エラーログ
-          }
-
-          if (progressText) {
-            console.log("ProgressText found, setting test text"); // デバッグログ
-            progressText.textContent = "50%";
-          } else {
-            console.error("ProgressText element not found!"); // エラーログ
-          }
-
-          // 3秒後に実際のupdateProgressを呼ぶ
-          setTimeout(() => {
-            console.log("Calling updateProgress after test...");
-            updateProgress();
-          }, 3000);
-        }
-
-        // デバッグ用：手動でプログレスを変更する関数（ブラウザコンソールで使用可能）
-        window.setTestProgress = function (percent) {
-          const progressBar = document.getElementById("progressBar");
-          const progressText = document.getElementById("progressText");
-          if (progressBar) progressBar.style.width = percent + "%";
-          if (progressText) progressText.textContent = percent + "%";
-          console.log("Manual progress set to:", percent + "%");
-        }; // 今日の日付を表示
-        function initializeToday() {
-          const today = new Date();
-          const todayStr = today.toLocaleDateString("ja-JP", {
-            year: "numeric",
-            month: "2-digit",
-            day: "2-digit",
-            weekday: "short",
-          });
-          const todayElement = document.getElementById("today");
-          if (todayElement) {
-            todayElement.textContent = todayStr;
-          }
-        }
-
-        // 基本的なイベントリスナーを設定
-        function setupEventListeners() {
-          console.log("Setting up event listeners..."); // デバッグログ
-
-          // 保存・エクスポート・クリアボタン
-          const saveBtn = document.getElementById("saveLog");
-          const expBtn = document.getElementById("exportCsv");
-          const clrBtn = document.getElementById("clearAllLogs");
-
-          console.log("Buttons found:", { saveBtn, expBtn, clrBtn }); // デバッグログ
-
-          if (saveBtn)
-            saveBtn.addEventListener("click", () => {
-              console.log("Save button clicked"); // デバッグログ
-              saveTodaySnapshot(false);
-            });
-          if (expBtn)
-            expBtn.addEventListener("click", () => {
-              console.log("Export button clicked"); // デバッグログ
-              exportCsv();
-            });
-          if (clrBtn)
-            clrBtn.addEventListener("click", () => {
-              console.log("Clear button clicked"); // デバッグログ
-              clearAllLogs();
-            });
-
-          // チェックボックスのイベントリスナー
-          const bikeDone = document.getElementById("bikeDone");
-          const strengthDone = document.getElementById("strengthDone");
-          const stretchDone = document.getElementById("stretchDone");
-
-          console.log("Checkboxes found:", {
-            bikeDone,
-            strengthDone,
-            stretchDone,
-          }); // デバッグログ
-
-          if (bikeDone)
-            bikeDone.addEventListener("change", () => {
-              console.log("Bike checkbox changed:", bikeDone.checked); // デバッグログ
-              mark("bikeDone", bikeDone.checked);
-            });
-          if (strengthDone)
-            strengthDone.addEventListener("change", () => {
-              console.log("Strength checkbox changed:", strengthDone.checked); // デバッグログ
-              mark("strengthDone", strengthDone.checked);
-            });
-          if (stretchDone)
-            stretchDone.addEventListener("change", () => {
-              console.log("Stretch checkbox changed:", stretchDone.checked); // デバッグログ
-              mark("stretchDone", stretchDone.checked);
-            });
-
-          // セット数入力のイベントリスナー
-          ["sq", "pu", "pl", "bd", "hl", "mc"].forEach((name) => {
-            const input = document.getElementById(name);
-            if (input) {
-              input.addEventListener("input", () => {
-                const sets = getSets();
-                sets[name] = parseInt(input.value) || 0;
-                setSets(sets);
-                updateProgress();
-              });
-            }
-          });
-
-          // ストレッチ部位のチェックボックス
-          ["neck", "shoulder", "chest", "back", "hip", "thigh", "calf"].forEach(
-            (name) => {
-              const checkbox = document.getElementById(name);
-              if (checkbox) {
-                checkbox.addEventListener("change", () => {
-                  const parts = getStretchParts();
-                  parts[name] = checkbox.checked;
-                  setStretchParts(parts);
-                  updateProgress();
-                });
-              }
-            }
-          );
-        }
-
-        // 状態を復元
-        function restoreState() {
-          const state = getState();
-
-          // チェックボックスの状態を復元
-          const bikeDone = document.getElementById("bikeDone");
-          const strengthDone = document.getElementById("strengthDone");
-          const stretchDone = document.getElementById("stretchDone");
-
-          if (bikeDone) bikeDone.checked = state.bikeDone || false;
-          if (strengthDone) strengthDone.checked = state.strengthDone || false;
-          if (stretchDone) stretchDone.checked = state.stretchDone || false;
-
-          // セット数を復元
-          const sets = getSets();
-          ["sq", "pu", "pl", "bd", "hl", "mc"].forEach((name) => {
-            const input = document.getElementById(name);
-            if (input) {
-              input.value = sets[name] || 0;
-            }
-          });
-
-          // ストレッチ部位を復元
-          const parts = getStretchParts();
-          ["neck", "shoulder", "chest", "back", "hip", "thigh", "calf"].forEach(
-            (name) => {
-              const checkbox = document.getElementById(name);
-              if (checkbox) {
-                checkbox.checked = parts[name] || false;
-              }
-            }
-          );
-        }
-
-        // === Simple daily auto-save (one snapshot per date) ===
-        var __autoSaveTimer = null; // varにしてTDZを回避
-        function debounceSave(fn, delay = 800) {
-          if (__autoSaveTimer) clearTimeout(__autoSaveTimer);
-          __autoSaveTimer = setTimeout(fn, delay);
-        }
-
-        function upsertJournalByDate(entry) {
-          const list = getJournal();
-          const idx = list.findIndex((x) => x.dateKey === entry.dateKey);
-          if (idx >= 0) list[idx] = entry;
-          else list.push(entry);
-          setJournal(list);
-        }
-
-        async function saveTodaySnapshot(silent = false) {
-          console.log("saveTodaySnapshot called, silent:", silent); // デバッグログ
-          try {
-            const e = summarizeToday();
-            console.log("Snapshot data:", e); // デバッグログ
-            e.date = new Date().toISOString(); // snapshot time
-            upsertJournalByDate(e);
-            renderLogTable();
-            // サーバーへも保存（成功/失敗はUIを止めない）
-            try {
-              await pushTodayToServer(e);
-              // サーバーを真実とするため再取得して差分を反映
-              await fetchLogsFromServer();
-            } catch {}
-            if (!silent) {
-              alert("今日のスナップショットを保存しました。");
-            }
-            console.log("Snapshot saved successfully"); // デバッグログ
-          } catch (error) {
-            console.error("Error saving snapshot:", error); // エラーログ
-          }
-        }
-
-        function scheduleAutoSave() {
-          debounceSave(() => {
-            const e = summarizeToday();
-            e.date = new Date().toISOString();
-            upsertJournalByDate(e);
-            renderLogTable();
-            pushTodayToServer(e);
-          }, 800);
-        }
-
-        // 既存のupdateProgressの末尾で自動保存を呼ぶ
-
-        function exportJson() {
-          const data = getJournal();
-          const blob = new Blob([JSON.stringify(data, null, 2)], {
-            type: "application/json",
-          });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = "bootcamp_journal_backup.json";
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
-          URL.revokeObjectURL(url);
-        }
-
-        function importJson(file) {
-          const reader = new FileReader();
-          reader.onload = (e) => {
-            try {
-              const parsed = JSON.parse(e.target.result);
-              if (!Array.isArray(parsed)) throw new Error("Invalid format");
-              setJournal(parsed);
-              renderLogTable();
-              alert("JSONを読み込みました。");
-            } catch (err) {
-              alert("読み込みに失敗しました: " + err.message);
-            }
-          };
-          reader.readAsText(file, "utf-8");
-        }
-
-        // renderLogTable の重複（同じdateKeyが複数ある場合）の整理
-        const _orig_render = renderLogTable;
-        renderLogTable = function () {
-          const tbody = document.querySelector("#logTable tbody");
-          if (!tbody) return;
-          tbody.innerHTML = "";
-          // 同じdateKeyのうち最新のdateを採用
-          const map = new Map();
-          getJournal().forEach((lg) => {
-            const key = lg.dateKey || (lg.date || "").slice(0, 10);
-            const cur = map.get(key);
-            if (!cur || new Date(lg.date) > new Date(cur.date))
-              map.set(key, { ...lg, dateKey: key });
-          });
-          const rows = Array.from(map.values()).sort((a, b) =>
-            a.dateKey < b.dateKey ? 1 : -1
-          ); // desc by dateKey
-
-          rows.forEach((lg) => {
-            const tr = document.createElement("tr");
-            tr.style.borderBottom = "1px solid #223259";
-            const dt = new Date(lg.date || lg.dateKey + "T00:00:00Z");
-            const dtStr = dt.toLocaleString("ja-JP", {
-              year: "numeric",
-              month: "2-digit",
-              day: "2-digit",
-              hour: "2-digit",
-              minute: "2-digit",
-            });
-            tr.innerHTML = `
-        <td style="padding:8px;">${dtStr}</td>
-        <td style="padding:8px;">${lg.progress ?? "-"}</td>
-        <td style="padding:8px;">${
-          lg.bikeDone ? (lg.hiit ? "有酸素+HIIT" : "有酸素") : "-"
-        }</td>
-        <td style="padding:8px;">${lg.sets?.sq ?? 0}</td>
-        <td style="padding:8px;">${lg.sets?.pu ?? 0}</td>
-        <td style="padding:8px;">${lg.sets?.pl ?? 0}</td>
-        <td style="padding:8px;">${lg.sets?.bd ?? 0}</td>
-        <td style="padding:8px;">${lg.sets?.hl ?? 0}</td>
-        <td style="padding:8px;">${lg.sets?.mc ?? 0}</td>
-        <td style="padding:8px;">${lg.stretchDone ? "✔" : "-"}</td>
-        <td style="padding:8px; max-width:320px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${(
-          lg.note || ""
-        ).replace(/"/g, "&quot;")}">${lg.note || ""}</td>
-        <td style="padding:8px;">
-          <button class="btn ghost small" data-datekey="${
-            lg.dateKey
-          }">削除</button>
-        </td>
-      `;
             tr.querySelector("button").addEventListener("click", async (e) => {
               const key = e.target.dataset.datekey;
-              const list = getJournal();
-              const idx = list.findIndex((x) => (x.dateKey || "") === key);
-              if (idx >= 0 && confirm("この日の記録を削除しますか？")) {
-                // まずローカル更新で即時反映
-                list.splice(idx, 1);
-                setJournal(list);
-                renderLogTable();
-                // サーバーからも削除し、完了後に同期
+              if (confirm("この日の記録を削除しますか？")) {
                 try {
                   const ok = await ensureLogin();
                   if (ok) {
-                    await fetch(`/api/logs/${encodeURIComponent(key)}`, {
-                      method: "DELETE",
-                    });
-                    await fetchLogsFromServer();
+                    await fetch(`/api/logs/${encodeURIComponent(key)}`, { method: "DELETE" });
+                    await renderLogTable();
                   }
                 } catch (err) {
                   console.warn("Failed to delete on server:", err);
@@ -1804,8 +1504,7 @@
             });
             tbody.appendChild(tr);
           });
-        };
-      })();
+        }
     </script>
   </body>
 </html>
