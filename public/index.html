@@ -1208,6 +1208,12 @@
           totalSec--;
           segRemain--;
           $("#clock").textContent = fmt(totalSec);
+
+          // 3分ごとに音を鳴らす（残り時間が3分の倍数で、0以外のとき）
+          if (totalSec > 0 && totalSec % 180 === 0) {
+            beep();
+          }
+
           if (segRemain <= 0) {
             cursor++;
             if (cursor < plan.length) {
@@ -1462,12 +1468,12 @@
             const dtStr = isNaN(dt.getTime())
               ? lg.dateKey || "-"
               : dt.toLocaleString("ja-JP", {
-                  year: "numeric",
-                  month: "2-digit",
-                  day: "2-digit",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                });
+                year: "numeric",
+                month: "2-digit",
+                day: "2-digit",
+                hour: "2-digit",
+                minute: "2-digit",
+              });
             tr.innerHTML = `
               <td style="padding:8px;">${dtStr}</td>
               <td style="padding:8px;">${lg.progress ?? "-"}</td>
