@@ -127,6 +127,7 @@ app.post("/api/register", async (req, res) => {
 
     // 登録後、自動ログイン
     req.session.user = { name: uname };
+    await new Promise((resolve) => req.session.save(resolve)); // セッション保存を待つ
     res.json({ ok: true, user: uname });
     console.log(`[REGISTER] New user created: "${uname}"`);
     // ユーザー登録時に日次ログ保存
