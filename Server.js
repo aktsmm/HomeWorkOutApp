@@ -19,7 +19,8 @@ const ADMIN_USER = process.env.ADMIN_USER || "admin";
 const ADMIN_PASS = process.env.ADMIN_PASS || "password"; // デモ用
 
 // ---- DB 準備（SQLite）----
-const db = new Database(path.join(__dirname, "db.sqlite"));
+const dbPath = path.join(__dirname, "db.sqlite");
+const db = new Database(dbPath);
 db.pragma("journal_mode = WAL");
 db.exec(`
 CREATE TABLE IF NOT EXISTS users (
@@ -36,6 +37,8 @@ CREATE TABLE IF NOT EXISTS logs (
   UNIQUE(username, dateKey)
 );
 `);
+
+console.log(`[DB] Using SQLite at: ${dbPath}`);
 
 // 初回ユーザー（存在しなければ作成）
 const userRow = db
@@ -77,6 +80,7 @@ function requireAuth(req, res, next) {
 // 新規ユーザー登録
 app.post("/api/register", async (req, res) => {
   const { username, password } = req.body || {};
+  const uname = typeof username === "string" ? username.trim() : "";
   if (!username || !password)
     return res
       .status(400)
@@ -90,7 +94,7 @@ app.post("/api/register", async (req, res) => {
   // ユーザー名の重複チェック
   const existingUser = db
     .prepare("SELECT * FROM users WHERE username=?")
-    .get(username);
+    .get(uname);
   if (existingUser)
     return res
       .status(409)
@@ -99,14 +103,14 @@ app.post("/api/register", async (req, res) => {
   try {
     const passhash = await bcrypt.hash(password, 10);
     db.prepare("INSERT INTO users(username, passhash) VALUES (?,?)").run(
-      username,
+      uname,
       passhash
     );
 
     // 登録後、自動ログイン
-    req.session.user = { name: username };
-    res.json({ ok: true, user: username });
-    console.log(`[REGISTER] New user created: "${username}"`);
+    req.session.user = { name: uname };
+    res.json({ ok: true, user: uname });
+    console.log(`[REGISTER] New user created: "${uname}"`);
   } catch (error) {
     console.error("[REGISTER] Error:", error);
     res.status(500).json({ error: "登録に失敗しました" });
@@ -115,12 +119,13 @@ app.post("/api/register", async (req, res) => {
 
 app.post("/api/login", async (req, res) => {
   const { username, password } = req.body || {};
+  const uname = typeof username === "string" ? username.trim() : "";
   if (!username || !password)
     return res
       .status(400)
       .json({ error: "ユーザーIDとパスワードを入力してください" });
 
-  const row = db.prepare("SELECT * FROM users WHERE username=?").get(username);
+  const row = db.prepare("SELECT * FROM users WHERE username=?").get(uname);
   if (!row)
     return res
       .status(401)
@@ -132,9 +137,9 @@ app.post("/api/login", async (req, res) => {
       .status(401)
       .json({ error: "ユーザーIDまたはパスワードが正しくありません" });
 
-  req.session.user = { name: username };
-  res.json({ ok: true, user: username });
-  console.log(`[LOGIN] User logged in: "${username}"`);
+  req.session.user = { name: uname };
+  res.json({ ok: true, user: uname });
+  console.log(`[LOGIN] User logged in: "${uname}"`);
 });
 
 app.post("/api/logout", (req, res) => {
@@ -166,6 +171,13 @@ app.post("/api/logs/upsert", requireAuth, (req, res) => {
       payload=excluded.payload
   `
   ).run({ username, dateKey: entry.dateKey, dateIso, payload });
+
+  // デバッグ: だれが何日付で保存したか
+  try {
+    console.log(
+      `[LOGS] Upsert by user="${username}" date="${entry.dateKey}" bytes=${payload.length}`
+    );
+  } catch {}
 
   res.json({ ok: true });
 });

@@ -16,6 +16,9 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
+# npm キャッシュ
+.npm-cache/
+
 # OS/エディタ
 .DS_Store
 Thumbs.db

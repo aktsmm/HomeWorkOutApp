@@ -59,7 +59,7 @@ Node.js（JavaScript）で作られており、データベースには SQLite �
 
 ## 🚀 はじめ方（初心者向け）
 
-重要: Windows での動作安定のため、Node.js は LTS（推奨: 20.x）をご利用ください。Node 22 だと better-sqlite3 のプリビルドが無く、Visual Studio Build Tools を使ったネイティブビルドが必要になり失敗しやすいです。
+重要: Windows での動作安定のため、Node.js は LTS（推奨: 20.x）をご利用ください。Node 22 だと better-sqlite3 のプリビルドが無く、Visual Studio Build Tools を使ったネイティブビルドが必要になり失敗するパターンもあり。（ただし成功するパターンもあり・・詳細不明)
 
 ### 必要なもの
 
