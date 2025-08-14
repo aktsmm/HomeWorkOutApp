@@ -720,31 +720,45 @@
         const deleteTodayBtn = document.getElementById("deleteTodayLog");
         if (deleteTodayBtn) {
           deleteTodayBtn.addEventListener("click", async () => {
-            const today = new Date().toISOString().split("T")[0];
+            const today = keyBase();
             if (
               confirm(
                 `今日（${today}）の記録を削除しますか？この操作は取り消せません。`
               )
             ) {
               try {
-                // 今日のワークアウト記録を削除
-                const response = await fetch(`/api/logs/${today}`, {
-                  method: "DELETE",
-                });
+                const ok = await ensureLogin();
+                if (!ok) return;
 
-                if (response.ok) {
-                  await renderLogTable();
-                  // チェックボックス状態もリセット
-                  document
-                    .querySelectorAll('input[type="checkbox"]')
-                    .forEach((cb) => {
-                      cb.checked = false;
-                    });
-                  updateProgress();
-                  alert("今日の記録を削除しました。");
-                } else {
-                  alert("削除に失敗しました。");
+                // 当日分の全スナップショット（YYYY-MM-DD-<n>）と基準キー（YYYY-MM-DD）を削除
+                const res = await fetch("/api/logs");
+                const logs = res.ok ? await res.json() : [];
+                const targets = (logs || []).filter(
+                  (log) =>
+                    log?.dateKey &&
+                    (log.dateKey === today ||
+                      log.dateKey.startsWith(today + "-"))
+                );
+                for (const t of targets) {
+                  await fetch(`/api/logs/${encodeURIComponent(t.dateKey)}`, {
+                    method: "DELETE",
+                  });
                 }
+
+                await renderLogTable();
+                // UIもリセット
+                document
+                  .querySelectorAll('input[type="checkbox"]')
+                  .forEach((cb) => {
+                    cb.checked = false;
+                  });
+                document
+                  .querySelectorAll("input[id$='Count']")
+                  .forEach((inp) => (inp.value = "0"));
+                const noteEl = document.getElementById("note");
+                if (noteEl) noteEl.value = "";
+                updateProgress();
+                alert("今日の記録を削除しました。");
               } catch (e) {
                 console.warn("Delete today log failed:", e);
                 alert("削除処理中にエラーが発生しました。");
@@ -1035,19 +1049,16 @@
         });
       }
 
-      // 今日のスナップショットをサーバーに保存
+      // 今日のスナップショットをサーバーに保存（当日最大3件: YYYY-MM-DD-1..3）
       async function saveTodaySnapshot(silent = false) {
         try {
           const ok = await ensureLogin();
           if (!ok) return;
 
+          // 現在のUI状態を収集
           const state = await getState();
           const sets = collectSets();
           const stretchParts = collectStretch();
-
-          console.log("[DEBUG] saveTodaySnapshot - 収集データ:");
-          console.log("  sets:", sets);
-          console.log("  stretchParts:", stretchParts);
 
           // 進捗率を再計算（小項目ベース）
           const s = {
@@ -1094,7 +1105,6 @@
 
           if (allItemsCompleted) {
             totalProgress = 100;
-            console.log("[DEBUG] 全小項目完了により進捗100%に設定");
           } else {
             // 3つの主要カテゴリーの完了率を計算（各々33.3%の重み）
             const bikeProgress = s.bikeDone ? 1 : 0;
@@ -1112,31 +1122,81 @@
             );
           }
 
+          // --- ここから: 当日最大3件のスナップショットを作成 ---
+          const today = keyBase(); // YYYY-MM-DD
+          let nextIndex = 0;
+          try {
+            // 当日の既存スナップショット（YYYY-MM-DD-<n>）を取得して空き番号を決める
+            const r = await fetch("/api/logs");
+            if (r.ok) {
+              const logs = await r.json();
+              const todays = (logs || []).filter(
+                (l) =>
+                  l &&
+                  typeof l.dateKey === "string" &&
+                  l.dateKey.startsWith(today + "-") &&
+                  // workoutのみを対象（他アクションは除外）
+                  (l.action === "workout" || typeof l.action === "undefined")
+              );
+              const used = new Set(
+                todays
+                  .map((l) => Number(String(l.dateKey).split("-").pop()))
+                  .filter((n) => !isNaN(n))
+              );
+              for (let i = 1; i <= 3; i++) {
+                if (!used.has(i)) {
+                  nextIndex = i;
+                  break;
+                }
+              }
+            }
+          } catch (_) {
+            // 取得失敗時は1件目として扱う
+            nextIndex = 1;
+          }
+
+          if (!nextIndex) {
+            if (!silent) alert("本日の保存上限（3件）に達しました。");
+            return;
+          }
+
+          const snapshotDateKey = `${today}-${nextIndex}`; // 例) 2025-08-14-1
+
+          // サーバーに送るエントリ（スナップショット）
           const entry = {
             date: new Date().toISOString(),
-            dateKey: keyBase(),
+            dateKey: snapshotDateKey,
             progress: totalProgress,
             bikeDone: s.bikeDone,
             strengthDone: s.strengthDone,
             stretchDone: s.stretchDone,
-            hiit: !!$("#hiitToggle")?.checked,
+            hiit: !!document.querySelector("#hiitToggle")?.checked,
             sets: sets,
             stretchParts: stretchParts,
-            note: $("#note")?.value || "",
+            note: document.querySelector("#note")?.value || "",
           };
 
-          console.log("[DEBUG] saveTodaySnapshot - 送信エントリ:", entry);
-
+          // スナップショットを作成（ユニークdateKeyなので新規作成になる）
           await pushTodayToServer(entry);
 
+          // 併せて「作業用の当日レコード（YYYY-MM-DD）」も最新状態で更新
+          await setState({
+            ...state,
+            sets,
+            stretchParts,
+            bikeDone: s.bikeDone,
+            strengthDone: s.strengthDone,
+            stretchDone: s.stretchDone,
+            note: document.querySelector("#note")?.value || "",
+          });
+
           if (!silent) {
-            alert("今日の記録を保存しました！");
+            alert(`今日の記録を保存しました（${nextIndex}/3件目）。`);
             await renderLogTable();
           }
         } catch (e) {
           console.warn("Save snapshot failed:", e);
           if (!silent) {
-            // サーバーからの具体的なエラーメッセージを表示
             const errorMessage =
               e.message || "保存に失敗しました。再試行してください。";
             alert(errorMessage);
@@ -2140,7 +2200,6 @@
           }
 
           try {
-            console.log("[CHART] Loading weekly chart data...");
             const response = await fetch("/api/logs");
             if (!response.ok) {
               throw new Error(
@@ -2148,13 +2207,11 @@
               );
             }
             const logs = await response.json();
-            console.log("[CHART] 取得したログデータ:", logs);
 
             // workout記録のみフィルタリング
             const workoutLogs = logs.filter((log) => log.action === "workout");
-            console.log("[CHART] ワークアウト記録のみ:", workoutLogs);
 
-            // 過去7日間のデータを準備
+            // 過去7日間のデータを準備（同日複数件は最大進捗を採用）
             const today = new Date();
             const weeklyData = [];
             const labels = [];
@@ -2168,48 +2225,27 @@
                 day: "2-digit",
               });
 
-              // その日のログを検索（より柔軟な検索）
-              console.log(`[CHART] 検索対象日: ${dateStr}`);
-              const dayLog = workoutLogs.find((log) => {
-                const logDate =
-                  log.dateKey || (log.date ? log.date.slice(0, 10) : "");
-                const match =
-                  logDate === dateStr || logDate.startsWith(dateStr);
-                console.log(
-                  `[CHART] ログチェック: dateKey="${log.dateKey}", date="${log.date}", action="${log.action}", progress=${log.progress}, match=${match}`
+              // 当日分の全レコードを取得（YYYY-MM-DD と YYYY-MM-DD-<n> を対象）
+              const dayLogs = workoutLogs.filter((log) => {
+                const key = String(
+                  log.dateKey || (log.date ? log.date.slice(0, 10) : "")
                 );
-                return match;
+                return key === dateStr || key.startsWith(dateStr + "-");
               });
 
-              // 進捗の取得（数値変換を確実に）
-              let progress = 0;
-              if (dayLog && typeof dayLog.progress !== "undefined") {
-                progress = Number(dayLog.progress) || 0;
-              }
-              console.log(
-                `[CHART] ${dateStr} (${displayDate}) の最終進捗: ${progress}%`
-              );
+              const progress = dayLogs.length
+                ? Math.max(...dayLogs.map((l) => Number(l.progress) || 0))
+                : 0;
 
               labels.push(displayDate);
               weeklyData.push(progress);
             }
 
-            console.log("[CHART] 最終的なチャートデータ:", {
-              labels,
-              weeklyData,
-            });
-
-            // チャートを更新
             progressChart.data.labels = labels;
             progressChart.data.datasets[0].data = weeklyData;
             progressChart.options.plugins.title.text =
               "週間進捗チャート（過去7日間）";
             progressChart.update();
-
-            console.log("[CHART] 週間チャート更新完了:", {
-              labels,
-              data: weeklyData,
-            });
           } catch (error) {
             console.error("[CHART] 週間チャート取得エラー:", error);
             alert("週間チャートの取得に失敗しました");
@@ -2224,7 +2260,6 @@
           }
 
           try {
-            console.log("[CHART] Loading monthly chart data...");
             const response = await fetch("/api/logs");
             if (!response.ok) {
               throw new Error(
@@ -2233,7 +2268,9 @@
             }
             const logs = await response.json();
 
-            // 過去30日間のデータを準備
+            const workoutLogs = logs.filter((log) => log.action === "workout");
+
+            // 過去30日間（同日複数件は最大進捗を採用）
             const today = new Date();
             const monthlyData = [];
             const labels = [];
@@ -2247,28 +2284,26 @@
                 day: "2-digit",
               });
 
-              // その日のログを検索
-              const dayLog = logs.find(
-                (log) =>
-                  log.dateKey === dateStr || log.dateKey.startsWith(dateStr)
-              );
-              const progress = dayLog ? dayLog.progress || 0 : 0;
+              const dayLogs = workoutLogs.filter((log) => {
+                const key = String(
+                  log.dateKey || (log.date ? log.date.slice(0, 10) : "")
+                );
+                return key === dateStr || key.startsWith(dateStr + "-");
+              });
+
+              const progress = dayLogs.length
+                ? Math.max(...dayLogs.map((l) => Number(l.progress) || 0))
+                : 0;
 
               labels.push(displayDate);
               monthlyData.push(progress);
             }
 
-            // チャートを更新
             progressChart.data.labels = labels;
             progressChart.data.datasets[0].data = monthlyData;
             progressChart.options.plugins.title.text =
               "月間進捗チャート（過去30日間）";
             progressChart.update();
-
-            console.log("[CHART] 月間チャート更新完了:", {
-              labels,
-              data: monthlyData,
-            });
           } catch (error) {
             console.error("[CHART] 月間チャート取得エラー:", error);
             alert("月間チャートの取得に失敗しました");
@@ -2328,5 +2363,7 @@
         });
       })();
     </script>
+
+    <!-- BGMコントロール削除済み -->
   </body>
 </html>
